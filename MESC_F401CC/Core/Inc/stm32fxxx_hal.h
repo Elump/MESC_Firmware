@@ -36,7 +36,7 @@ Profile defaults
 */
 
 /* Temperature parameters */
-#define MESC_TEMP_MOS_R_F     10000.0f
+#define MESC_TEMP_MOS_R_F     4700.0f	//changed for IHM08
 #define MESC_TEMP_MOS_METHOD  TEMP_METHOD_STEINHART_HART_BETA_R
 #define MESC_TEMP_MOS_SCHEMA  TEMP_SCHEMA_R_F_ON_R_T
 #define MESC_TEMP_MOS_SH_BETA 3437.864258f
