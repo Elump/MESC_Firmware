@@ -21,7 +21,6 @@
 //#define PROPDRIVE2830_1000KV
 //#define BR3536_1200KV
 //#define QS138_90H
-//#define Max30	// Smops Test Motor
 //#define //... Define your motor name here...//
 
 
@@ -138,15 +137,6 @@
 #define DEFAULT_MOTOR_PP 17 //Pole Pairs - No idea, guess
 
 #elif defined(BR3536_1200KV)
-
-#elif defined(Max30) // Smops Test Motor
-#define MAX_MOTOR_PHASE_CURRENT 25.0f
-#define DEFAULT_MOTOR_POWER 500.0f
-#define DEFAULT_FLUX_LINKAGE 0.00175f//Set this to the motor linkage in wB
-#define DEFAULT_MOTOR_Ld 0.000145f //Henries
-#define DEFAULT_MOTOR_Lq 0.000160f//Henries
-#define DEFAULT_MOTOR_R 1.8f //Ohms
-#define DEFAULT_MOTOR_PP 1 //Pole Pairs
 
 //#elif defined() //... Define your motor parameters here...//
 

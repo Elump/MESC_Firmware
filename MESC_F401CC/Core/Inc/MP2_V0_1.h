@@ -8,7 +8,7 @@
 #ifndef INC_MP2_V0_1_H_
 #define INC_MP2_V0_1_H_
 //Pick a motor for default
-#define Max30	// Smops Test Motor, motor details are defined in MESC_MOTOR_DEFAULTS.h
+#define MCMASTER_70KV_8080//QS165
 
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
