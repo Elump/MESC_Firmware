@@ -99,9 +99,9 @@ static float temp_calculate_R_T( TEMP const * const temp, float const Vout )
         }
         case TEMP_SCHEMA_R_T_ON_R_F:
         {
-            float const num = ((temp->V - Vout) * temp->R_F); //Smops updated
+            float const num = (temp->V * temp->R_F);
             float const den = Vout;
-            float const R_T = (num / den);
+            float const R_T = (num / den) - temp->R_F;
             // return elec_potdiv_Rhi( temp->V, Vout, temp->R_F );
             return R_T;
         }
