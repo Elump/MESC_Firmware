@@ -852,9 +852,15 @@ uint16_t phasebalance;
   void ADCPhaseConversion(MESC_motor_typedef *_motor) {
 	  //To save clock cycles in the main run loop we only want to convert the phase voltages while tracking.
   //Convert the voltages to volts in real SI units
+  #ifdef HAS_DIFF_PHASE_RESISTORS
 	  _motor->Conv.Vu = (float)_motor->Raw.Vu * g_hw_setup.VEMFGain + 0.68f;  //Smops: added diode voltage
 	  _motor->Conv.Vv = (float)_motor->Raw.Vv * g_hw_setup.VEMFGain + 0.68f;
 	  _motor->Conv.Vw = (float)_motor->Raw.Vw * g_hw_setup.VEMFGain + 0.68f;
+  #else
+	  _motor->Conv.Vu = (float)_motor->Raw.Vu * g_hw_setup.VBGain;
+	  _motor->Conv.Vv = (float)_motor->Raw.Vv * g_hw_setup.VBGain;
+	  _motor->Conv.Vw = (float)_motor->Raw.Vw * g_hw_setup.VBGain;
+  #endif
   }
 
   /////////////////////////////////////////////////////////////////////////////

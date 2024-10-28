@@ -24,8 +24,11 @@
 #define R_VBUS_BOTTOM 9310.0f //changed for IHM08 //Vbus voltage sensors
 #define R_VBUS_TOP 169000.0f  //changed for IHM08
 
-#define R_VEMF_BOTTOM 2200.0f //changed for IHM08 //SMOPS: added separate BEMF gain
-#define R_VEMF_TOP 10000.0f  //changed for IHM08
+#define HAS_DIFF_PHASE_RESISTORS
+#ifdef HAS_DIFF_PHASE_RESISTORS
+	#define R_VEMF_BOTTOM 2200.0f //changed for IHM08 //SMOPS: added separate BEMF gain
+	#define R_VEMF_TOP 10000.0f  //changed for IHM08
+#endif
 
 
 #define MAX_ID_REQUEST 2.0f  //changed for IHM08

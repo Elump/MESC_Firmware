@@ -53,10 +53,10 @@ struct MESC_log_vars
 
 
 //Define anticipated errors possible, not all will be implemented
-#define ERROR_OVERCURRENT_PHA 1
-#define ERROR_OVERCURRENT_PHB 2
-#define ERROR_OVERCURRENT_PHC 3
-#define ERROR_OVERVOLTAGE 4  // 0b1000 =16
+#define ERROR_OVERCURRENT_PHA 1 // 0b0000 0001 =1
+#define ERROR_OVERCURRENT_PHB 2 // 0b0000 0010 =2
+#define ERROR_OVERCURRENT_PHC 3 // 0b0000 0100 =4
+#define ERROR_OVERVOLTAGE 4     // 0b0000 1000 =8
 #define ERROR_UNDERVOLTAGE 5
 #define ERROR_BRK 6
 #define ERROR_OVERTEMPU 7

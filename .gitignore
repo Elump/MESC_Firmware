@@ -10,3 +10,5 @@ Release/
 /**/Gen/util_ntc
 /**/Gen/util_sinlut
 /**/vgcore.*
+/.docu
+/MESC_F401RE/.docu
