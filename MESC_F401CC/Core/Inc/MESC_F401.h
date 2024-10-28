@@ -37,9 +37,9 @@
 
 
 	/////////////////ADC///////////////
-#define  ADC1MIN 1000
+#define  ADC1MIN 1200
 #define  ADC1MAX 2700
-#define  ADC2MIN 2000
+#define  ADC2MIN 1200
 #define  ADC2MAX 4095
 
 #define ADC1_POLARITY 1.0f
@@ -91,7 +91,7 @@
 /////////////////////Prototype stuff that does not really work nicely//////////////////////////////
 
 //#define USE_DEADSHORT //This can be used in place of the phase sensors for startup from running.
-#define DEADSHORT_CURRENT 5.0f	//When recovering from tracking phase without phase sensors, the
+#define DEADSHORT_CURRENT 30.0f	//When recovering from tracking phase without phase sensors, the
 							//deadshort function will short the phases
 							//until the current exceeds this value. At this point, it calculates the Vd Vq and phase angle
 							//Don't set too high, after 9PWM periods, it will run the calc and start the motor regardless.

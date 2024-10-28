@@ -50,8 +50,6 @@ void hw_init(MESC_motor_typedef *_motor) {
   g_hw_setup.OpGain = OPGAIN;   //
   g_hw_setup.VBGain =
       (3.3f / 4096.0f) * (g_hw_setup.RVBB + g_hw_setup.RVBT) / g_hw_setup.RVBB;
-  g_hw_setup.VEMFGain =
-      ((3.3f-0.68f) / 4096.0f) * (R_VEMF_BOTTOM + R_VEMF_TOP) / R_VEMF_BOTTOM;	//SMOPS: added separate BEMF gain
   g_hw_setup.Igain = 3.3f / (g_hw_setup.Rshunt * 4096 * g_hw_setup.OpGain * SHUNT_POLARITY);  // TODO
   g_hw_setup.RawCurrLim =
       g_hw_setup.Imax * g_hw_setup.Rshunt * g_hw_setup.OpGain * (4096 / 3.3f) +

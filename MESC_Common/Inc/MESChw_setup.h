@@ -53,9 +53,9 @@ typedef struct {
   hardware_vars_t Rshunt;  // Shunt resistance, ohms
   hardware_vars_t RVBT;    // Vbus top divider - Also for switch divider
   hardware_vars_t RVBB;    // Vbus bottom divider - Also for switch divider
-  hardware_vars_t VBGain;  //=RVBB/(RVBB+RVBT);         //Resistor divider
+  hardware_vars_t
+      VBGain;              //=RVBB/(RVBB+RVBT);         //Resistor divider
                            // network gain (fractional)
-  hardware_vars_t VEMFGain;  //SMOPS: added separate BEMF gain
   hardware_vars_t RIphPU;  // phase current pullup
   hardware_vars_t RIphSR;  // phase current series resistance
   hardware_vars_t OpGain;  // OpAmp gain, if external, or internal PGA
