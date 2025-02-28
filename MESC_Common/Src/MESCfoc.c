@@ -107,6 +107,12 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 	SLOWLED->MODER &= ~(0x2<<(SLOWLEDIONO*2));
 #endif
 
+#ifdef ENABLE_PIN
+	ENABLE_PIN->MODER |= 0x1<<(ENABLE_PINIONO*2);
+	ENABLE_PIN->MODER &= ~(0x2<<(ENABLE_PINIONO*2));
+	SLOWLED->BSRR = ENABLE_PINIO;
+#endif
+
 #ifdef KILLSWITCH_GPIO
 	KILLSWITCH_GPIO->MODER &= ~(0b11<<(2*KILLSWITCH_IONO));
 #endif
@@ -149,13 +155,15 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 	_motor->ControlMode = DEFAULT_CONTROL_MODE;
 
 	_motor->MotorSensorMode = DEFAULT_SENSOR_MODE;
+	_motor->SLStartupSensor = DEFAULT_STARTUP_SENSOR;
 	_motor->HFI.Type = DEFAULT_HFI_TYPE;
+	if(_motor->SLStartupSensor != STARTUP_SENSOR_HFI){_motor->HFI.Type = HFI_TYPE_NONE;}
+	_motor->meas.hfi_voltage = HFI_VOLTAGE;
 
 	_motor->meas.measure_current = I_MEASURE;
 	_motor->meas.measure_voltage = V_MEASURE;
 	_motor->meas.measure_closedloop_current = I_MEASURE_CLOSEDLOOP;
 	_motor->FOC.pwm_frequency =PWM_FREQUENCY;
-	_motor->meas.hfi_voltage = HFI_VOLTAGE;
 
 
 	//Init Hall sensor
@@ -220,6 +228,7 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 #endif
 
 	_motor->options.pwm_type = PWM_SVPWM;//Default to combined bottom clamp sinusoidal combinationPWM
+	_motor->FOC.Modulation_max = MAX_MODULATION;
 #ifdef SIN_BOTTOM
 	_motor->options.pwm_type = PWM_SIN_BOTTOM;
 #endif
@@ -1189,7 +1198,7 @@ case SQRT_CIRCLE_LIM_VD:
     _motor->FOC.PWMmid = _motor->mtimer->Instance->ARR * 0.5f;
 
     _motor->FOC.ADC_duty_threshold = _motor->mtimer->Instance->ARR * 0.90f;
-
+    _motor->m.pole_angle = 65536/_motor->m.pole_pairs;
     calculateFlux(_motor);
 
     //PID controller gains
@@ -1216,14 +1225,14 @@ case SQRT_CIRCLE_LIM_VD:
     // 0.5*Vbus*MAX_MODULATION*SVPWM_MULTIPLIER*Vd_MAX_PROPORTION
     if(_motor->ControlMode != MOTOR_CONTROL_MODE_DUTY){_motor->FOC.Duty_scaler = 1.0f;}
     _motor->FOC.Vmag_max = 0.5f * _motor->Conv.Vbus *
-            MAX_MODULATION * SVPWM_MULTIPLIER * _motor->FOC.Duty_scaler;
+    		_motor->FOC.Modulation_max * SVPWM_MULTIPLIER * _motor->FOC.Duty_scaler;
     _motor->FOC.V_3Q_mag_max =  _motor->FOC.Vmag_max * 0.75f;
 
     _motor->FOC.Vmag_max2 = _motor->FOC.Vmag_max*_motor->FOC.Vmag_max;
     _motor->FOC.Vd_max = 0.5f * _motor->Conv.Vbus *
-                      MAX_MODULATION * SVPWM_MULTIPLIER * Vd_MAX_PROPORTION;
+    		_motor->FOC.Modulation_max * SVPWM_MULTIPLIER * Vd_MAX_PROPORTION;
     _motor->FOC.Vq_max = 0.5f * _motor->Conv.Vbus *
-                      MAX_MODULATION * SVPWM_MULTIPLIER * Vq_MAX_PROPORTION;
+    		_motor->FOC.Modulation_max * SVPWM_MULTIPLIER * Vq_MAX_PROPORTION;
 
     _motor->FOC.Vdint_max = _motor->FOC.Vd_max * 0.9f; //Logic in this is to always ensure headroom for the P term
     _motor->FOC.Vqint_max = _motor->FOC.Vq_max * 0.9f;
@@ -1249,7 +1258,7 @@ case SQRT_CIRCLE_LIM_VD:
 		//_motor->FOC.HFI_Threshold = ((HFI_VOLTAGE*sqrt2*2.0f)*_motor->FOC.pwm_period)/((_motor->m.L_D+_motor->m.L_Q)*0.5f);
 		if(HFI_THRESHOLD==0.0f){
 		_motor->HFI.toggle_voltage = mtr->Conv.Vbus*0.05f;
-			if(_motor->HFI.toggle_voltage<3.0f){_motor->HFI.toggle_voltage = 3.0f;}
+			if(_motor->HFI.toggle_voltage<1.5f){_motor->HFI.toggle_voltage = 1.5f;} //Must be greater than HFI hysteresis
 		}else{
 		_motor->HFI.toggle_voltage = HFI_THRESHOLD;
 		}
@@ -1742,9 +1751,9 @@ void MESCTrack(MESC_motor_typedef *_motor) {
 
       pkt.angle = pkt.angle & 0x7fff;
 #ifdef ENCODER_DIR_REVERSED
-      	  _motor->FOC.enc_angle = -POLE_PAIRS*((pkt.angle *2)%POLE_ANGLE)-_motor->FOC.enc_offset;
+      	  _motor->FOC.enc_angle = -_motor->m.pole_pairs*((pkt.angle *2)%_motor->m.pole_angle)-_motor->FOC.enc_offset;
 #else
-      _motor->FOC.enc_angle = POLE_PAIRS*((pkt.angle *2)%POLE_ANGLE)-_motor->FOC.enc_offset;
+      _motor->FOC.enc_angle = _motor->m.pole_pairs*((pkt.angle *2)%_motor->m.pole_angle)-_motor->FOC.enc_offset;
 #endif
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
       pkt.revolutions = pkt.revolutions&0b0000000111111111;
@@ -1786,6 +1795,8 @@ void  logVars(MESC_motor_typedef *_motor){
 	_motor->logging.Vd[_motor->logging.current_sample] = _motor->FOC.Vdq.d;
 	_motor->logging.Vq[_motor->logging.current_sample] = _motor->FOC.Vdq.q;
 	_motor->logging.angle[_motor->logging.current_sample] = _motor->FOC.FOCAngle;
+//	_motor->logging.angle[_motor->logging.current_sample] =	(uint16_t)_motor->hall.current_hall_state; //
+	_motor->logging.hallstate[_motor->logging.current_sample] = (uint16_t)_motor->hall.current_hall_state;
 	_motor->logging.current_sample++;
 	if(_motor->logging.current_sample>=LOGLENGTH){
 		_motor->logging.current_sample = 0;
@@ -1899,12 +1910,17 @@ void LimitFWCurrent(MESC_motor_typedef *_motor){
 
 void clampBatteryPower(MESC_motor_typedef *_motor){
 /////// Clamp the max power taken from the battery
+/////// This assumes no MTPA and no FW active. There is no (simple) closed form for FOC with D axis current.
     _motor->FOC.reqPower = 1.5f*fabsf(_motor->FOC.Vdq.q * _motor->FOC.Idq_prereq.q);
-    if (_motor->FOC.reqPower > _motor->m.Pmax) {
+    float batt_power_max = _motor->m.IBatmax*_motor->Conv.Vbus; //Calculate the max battery power allowed at current voltage
+    if(batt_power_max > _motor->m.Pmax){
+    	batt_power_max = _motor->m.Pmax;		//Replace batt_power with the lower power limit
+    }
+    if (_motor->FOC.reqPower > batt_power_max) {
     	if(_motor->FOC.Idq_prereq.q > 0.0f){
-    		_motor->FOC.Idq_prereq.q = _motor->m.Pmax / (fabsf(_motor->FOC.Vdq.q)*1.5f);
+    		_motor->FOC.Idq_prereq.q = batt_power_max / (fabsf(_motor->FOC.Vdq.q)*1.5f);
     	}else{
-    		_motor->FOC.Idq_prereq.q = -_motor->m.Pmax / (fabsf(_motor->FOC.Vdq.q)*1.5f);
+    		_motor->FOC.Idq_prereq.q = -batt_power_max / (fabsf(_motor->FOC.Vdq.q)*1.5f);
     	}
     }
 }

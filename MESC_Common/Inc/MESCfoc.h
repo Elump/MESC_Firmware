@@ -101,12 +101,16 @@
 #define MIN_IQ_REQUEST -0.1f
 #endif
 
+#ifndef DEFAULT_BATTERY_CURRENT
+#define DEFAULT_BATTERY_CURRENT 10.0f
+#endif
+
 #ifndef DEADSHORT_CURRENT
 #define DEADSHORT_CURRENT 30.0f
 #endif
 //HFI related
 #ifndef HFI_VOLTAGE
-#define HFI_VOLTAGE 4.0f
+#define HFI_VOLTAGE 2.0f
 #endif
 
 #ifndef HFI_TEST_CURRENT
@@ -115,6 +119,14 @@
 
 #ifndef HFI_THRESHOLD
 #define HFI_THRESHOLD 3.0f
+#endif
+
+#ifndef DEFAULT_HFI_TYPE
+#define DEFAULT_HFI_TYPE HFI_TYPE_NONE
+#endif
+
+#ifndef DEFAULT_STARTUP_SENSOR
+#define DEFAULT_STARTUP_SENSOR STARTUP_SENSOR_OPENLOOP
 #endif
 
 #ifndef CURRENT_BANDWIDTH
@@ -262,10 +274,12 @@ typedef struct {
 typedef struct MOTORProfile
 {
     float       Imax;         // Amp
+    float 		IBatmax;	  // Battery Amps
     float       Vmax;         // Volt
     float       Pmax;         // Watt
     uint32_t    RPMmax;       // 1/minute
     uint8_t     pole_pairs;
+    uint16_t 	pole_angle;
     uint8_t     direction;
     uint8_t     _[2];
     float       L_D;          // Henry
@@ -368,6 +382,7 @@ typedef struct {
   float Iq_igain;
   float Vab_to_PWM;
   uint16_t deadtime_comp;
+  float Modulation_max;
   float Duty_scaler;
   float Voltage;
   float Vmag_max;
@@ -528,7 +543,7 @@ typedef struct{
 
 //Logging
 #ifndef LOGLENGTH
-#define LOGLENGTH 100
+#define LOGLENGTH 300
 #endif
 //We want to log primarily Ia Ib Ic, Vd,Vq, phase angle, which gives us a complete picture of the machine state
 //4 bytes per variable*6 variables*1000 = 24000bytes. Lowest spec target is F303CB with 48kB SRAM, so this is OK
@@ -540,6 +555,8 @@ typedef struct {
 	float Vd[LOGLENGTH];
 	float Vq[LOGLENGTH];
 	uint16_t angle[LOGLENGTH];
+	uint16_t hallstate[LOGLENGTH];
+
 	uint32_t current_sample;
 	bool sample_now;
 	bool sample_no_auto_send;
@@ -639,6 +656,7 @@ typedef struct {
 	float special_injectionVd;
 	float special_injectionVq;
 	float toggle_voltage;
+	float toggle_eHz;
 	float mod_didq;
 	float Gain;
 	float int_err;
