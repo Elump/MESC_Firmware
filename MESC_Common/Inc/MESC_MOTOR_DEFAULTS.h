@@ -172,7 +172,6 @@
 #define DEFAULT_MOTOR_Lq 0.000055f//Henries
 #define DEFAULT_MOTOR_R 0.0530f //Ohms
 #define DEFAULT_MOTOR_PP 7 //Pole Pairs
-#endif /* INC_MESC_MOTOR_DEFAULTS_H_ */
 
 #elif defined(Max30) // Smops Test Motor
 #define MAX_MOTOR_PHASE_CURRENT 25.0f
@@ -198,6 +197,6 @@
 #define FLUX_LINKAGE_GAIN (10.0f * sqrtf(DEFAULT_FLUX_LINKAGE))
 #define NON_LINEAR_CENTERING_GAIN 5000.0f
 
-#endif
+#endif /* INC_MESC_MOTOR_DEFAULTS_H_ */
 
 
