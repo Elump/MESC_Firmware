@@ -9,7 +9,8 @@
 #define INC_MESC_F401_H_
 //First, include the header specific to your board, which includes hardware parameters like ABS MAX, shunts, potential divdiders
 //Ensure only one board's header file is uncommented!
-#include "MP2_V0_1.h"
+//#include "MP2_V0_1.h"
+#include "IMH08.h"
 #include <math.h>
 
 #define SOFTWARE_ADC_REGULAR
