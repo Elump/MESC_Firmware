@@ -15,11 +15,10 @@
 //#include "VESC6MK5.h"
 //#include "Pulse18.h"
 //#include "BSM24.h"
-#include "Wheely.h"
-
+//#include "Wheely.h"
+#include "IMH08.h"
 
 //#include "Q6F_minideskr1.h"
-
 
 #define HAS_PHASE_SENSORS //This refers to VOLTAGE sensing on phase, not current!
 
@@ -46,8 +45,8 @@
 
 
 	/////////////////ADC///////////////
-#define  ADC1MIN 1200
-#define  ADC1MAX 2700
+#define  ADC1MIN 1300
+#define  ADC1MAX 2400
 #define  ADC2MIN 1200
 #define  ADC2MAX 4095
 
@@ -55,7 +54,7 @@
 #define ADC2_POLARITY 1.0f
 
 #ifndef DEFAULT_INPUT
-#define DEFAULT_INPUT	0b1000 //0b...wxyz where w is UART, x is RCPWM, y is ADC2 z is ADC1
+#define DEFAULT_INPUT	0b1001 //0b...wxyz where w is UART, x is RCPWM, y is ADC2 z is ADC1
 #endif
 
 //Use the Ebike Profile tool
