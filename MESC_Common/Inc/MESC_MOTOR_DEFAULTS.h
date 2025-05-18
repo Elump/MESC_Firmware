@@ -182,6 +182,15 @@
 #define DEFAULT_MOTOR_R 1.8f //Ohms
 #define DEFAULT_MOTOR_PP 1 //Pole Pairs
 
+#elif defined(M5010) // Smops Test Motor
+#define MAX_MOTOR_PHASE_CURRENT 15.0f
+#define DEFAULT_MOTOR_POWER 500.0f
+#define DEFAULT_FLUX_LINKAGE 0.002f//Set this to the motor linkage in wB
+#define DEFAULT_MOTOR_Ld 0.0001f //Henries
+#define DEFAULT_MOTOR_Lq 0.00006f//Henries
+#define DEFAULT_MOTOR_R 0.15f //Ohms
+#define DEFAULT_MOTOR_PP 4 //Pole Pairs
+
 //#elif defined() //... Define your motor parameters here...//
 
 #else
@@ -196,6 +205,7 @@
 #define MAX_FLUX_LINKAGE DEFAULT_FLUX_LINKAGE
 #define FLUX_LINKAGE_GAIN (10.0f * sqrtf(DEFAULT_FLUX_LINKAGE))
 #define NON_LINEAR_CENTERING_GAIN 5000.0f
+#endif
 
 #endif /* INC_MESC_MOTOR_DEFAULTS_H_ */
 

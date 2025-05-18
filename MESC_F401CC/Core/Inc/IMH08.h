@@ -6,14 +6,15 @@
 #ifndef INC_IHM08_H_
 #define INC_IHM08_H_
 //Pick a motor for default
-#define Max30	// Smops Test Motor, motor details are defined in MESC_MOTOR_DEFAULTS.h
+//#define Max30	// Smops Test Motor, motor details are defined in MESC_MOTOR_DEFAULTS.h
+#define M5010
 
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
 
 #define SHUNT_POLARITY 1.0f         //changed for IHM08
 
-#define ABS_MAX_PHASE_CURRENT 25.0f //changed for IHM08
+#define ABS_MAX_PHASE_CURRENT 15.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
 #define ABS_MIN_BUS_VOLTAGE 10.0f   //changed for IHM08
 #define R_SHUNT 0.01f               //changed for IHM08
