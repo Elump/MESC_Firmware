@@ -78,14 +78,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
+
 I2C_HandleTypeDef hi2c2;
 uint16_t MPU_present, MPU_present2;
 MPU6050_data_t MPU_instance_1, MPU_instance_2;
 #define MPU6050_ADDR 0xD0
 #define DAC_MEMORY_ADDRESS 0x40007400
 #define DAC_VALUE_ADDRESS 0x40007408
-
-
 
 /* USER CODE END PV */
 
@@ -332,7 +331,17 @@ static void MX_ADC1_Init(void)
   ADC_InjectionConfTypeDef sConfigInjected = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
-
+  //ADC1 
+  //  in3  PA3
+  //  in4  PA4   Throttle
+  //  in5  PA5   
+  //  in6  PA6   
+  //  in7  PA7   Motor Temperature
+  //Injected
+  //  in10 PC0   SHA_Amp
+  //  in0  PA0   PHA_Vsense
+  //  in4  PA4   Throttle
+  //  in5  PA5   
   /* USER CODE END ADC1_Init 1 */
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
@@ -477,7 +486,16 @@ static void MX_ADC2_Init(void)
   ADC_InjectionConfTypeDef sConfigInjected = {0};
 
   /* USER CODE BEGIN ADC2_Init 1 */
-
+  //ADC2
+  //  in14 PC4
+  //  in15 PC5
+  //  in8  PB0
+  //  in9  PB1   MFet Temperature
+  //Injected
+  //  in11 PC1   SHB_Amp
+  //  in1  PA1   PHB_Vsense
+  //  in14 PC4   
+  //  in15 PC5   
   /* USER CODE END ADC2_Init 1 */
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
@@ -614,7 +632,13 @@ static void MX_ADC3_Init(void)
   ADC_InjectionConfTypeDef sConfigInjected = {0};
 
   /* USER CODE BEGIN ADC3_Init 1 */
-
+  //ADC3
+  //  in12 PC2
+  //Injected
+  //  in12 PC2   SHC_Amp
+  //  in2  PA2   PHC_Vsense
+  //  in13 PC3   Vin
+  //  in2  PA2   PHC_Vsense
   /* USER CODE END ADC3_Init 1 */
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)

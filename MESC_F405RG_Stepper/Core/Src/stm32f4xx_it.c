@@ -252,15 +252,11 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
+  MESC_Slow_IRQ_handler(&mtr[0]);
+  //MESC_Slow_IRQ_handler(&mtr[1]);
 	__HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
-
-	MESC_Slow_IRQ_handler(&mtr[0]);
-	//MESC_Slow_IRQ_handler(&mtr[1]);
-
-
   /* USER CODE END TIM2_IRQn 0 */
   /* USER CODE BEGIN TIM2_IRQn 1 */
-
   /* USER CODE END TIM2_IRQn 1 */
 }
 
@@ -270,7 +266,7 @@ void TIM2_IRQHandler(void)
 void TIM4_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM4_IRQn 0 */
-//This should now be for the RCPWM/PWM  input interrupt
+  //This should now be for the RCPWM/PWM  input interrupt
 	MESC_IC_IRQ_Handler(&mtr[0], htim4.Instance->SR,htim4.Instance->CCR1,htim4.Instance->CCR2);
 	htim4.Instance->SR = 0x0; //Clear all the interrupts and flags
 

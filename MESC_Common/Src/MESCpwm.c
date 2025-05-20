@@ -244,7 +244,7 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
 #endif //End of #ifdef STEPPER_MOTOR
   }
 
-// Here we set all the PWMoutputs to LOW, without triggering the timerBRK,
+ // Here we set all the PWMoutputs to LOW, without triggering the timerBRK,
  // which should only be set by the hardware comparators, in the case of a
  // shoot-through or other catastrophic event This function means that the
  // timer can be left running, ADCs sampling etc which enables a recovery, or
