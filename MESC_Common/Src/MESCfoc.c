@@ -432,13 +432,13 @@ void MESC_ADC_IRQ_handler(MESC_motor_typedef *_motor){
 int16_t diff;
 void fastLoop(MESC_motor_typedef *_motor) {
 	uint32_t cycles = CPU_CYCLES;
-  // Call this directly from the TIM top IRQ
-  _motor->hall.current_hall_state = getHallState(); //ToDo, this macro is not applicable to dual motors
-  // First thing we ever want to do is convert the ADC values
-  // to real, useable numbers.
-  ADCConversion(_motor);
+	// Call this directly from the TIM top IRQ
+	_motor->hall.current_hall_state = getHallState(); //ToDo, this macro is not applicable to dual motors
+	// First thing we ever want to do is convert the ADC values
+	// to real, useable numbers.
+	ADCConversion(_motor);
 
-  switch (_motor->MotorState) {
+	switch (_motor->MotorState) {
 
   	case MOTOR_STATE_INITIALISING:
   		initialiseInverter(_motor);
@@ -494,190 +494,183 @@ void fastLoop(MESC_motor_typedef *_motor) {
 	break;
 
     case MOTOR_STATE_TRACKING:
-#ifdef HAS_PHASE_SENSORS
-		  // Track using BEMF from phase sensors
-		  MESCpwm_generateBreak(_motor);
-		  getRawADCVph(_motor);
-		  ADCPhaseConversion(_motor);
-		  MESCTrack(_motor);
-		  switch(_motor->MotorSensorMode){
-		  	  case MOTOR_SENSOR_MODE_HALL:
-		  		  hallAngleEstimator(_motor);
-		  		  angleObserver(_motor);
-		  		  break;
-		  	  case MOTOR_SENSOR_MODE_SENSORLESS:
-				  MESCfluxobs_run(_motor);
-				  if(_motor->options.use_hall_start){
-					  HallFluxMonitor(_motor);
-				  }
-		  		  break;
-		  	  case MOTOR_SENSOR_MODE_ABSOLUTE_ENCODER:
-		  		  _motor->FOC.FOCAngle = _motor->FOC.enc_angle;
-		  		  break;
-		  	  case MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER:
-		  		  getIncEncAngle(_motor);
-		  		  _motor->FOC.FOCAngle = _motor->FOC.enc_angle;
-		  		  break;
-		  	  default:
-		  		  break;
-		  }
-#endif
-
-      break;
+		#ifdef HAS_PHASE_SENSORS
+		// Track using BEMF from phase sensors
+		MESCpwm_generateBreak(_motor);
+		getRawADCVph(_motor);
+		ADCPhaseConversion(_motor);
+		MESCTrack(_motor);
+		switch(_motor->MotorSensorMode){
+		case MOTOR_SENSOR_MODE_HALL:
+			hallAngleEstimator(_motor);
+			angleObserver(_motor);
+			break;
+		case MOTOR_SENSOR_MODE_SENSORLESS:
+			MESCfluxobs_run(_motor);
+			if(_motor->options.use_hall_start){
+				HallFluxMonitor(_motor);
+			}
+			break;
+		case MOTOR_SENSOR_MODE_ABSOLUTE_ENCODER:
+			_motor->FOC.FOCAngle = _motor->FOC.enc_angle;
+			break;
+		case MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER:
+			getIncEncAngle(_motor);
+			_motor->FOC.FOCAngle = _motor->FOC.enc_angle;
+			break;
+		default:
+			break;
+		}
+		#endif
+      	break;
 
     case MOTOR_STATE_OPEN_LOOP_STARTUP:
-      // Same as open loop
+      	// Same as open loop
     	_motor->FOC.openloop_step = 60;
     	OLGenerateAngle(_motor);
     	MESCFOC(_motor);
-      break;
+      	break;
 
     case MOTOR_STATE_OPEN_LOOP_TRANSITION:
-      // Run open loop
-      // Run observer
-      // RunFOC
-      // Weighted average of the outputs N PWM cycles
-      // Write the PWM values
-      break;
+		// Run open loop
+		// Run observer
+		// RunFOC
+		// Weighted average of the outputs N PWM cycles
+		// Write the PWM values
+		break;
 
     case MOTOR_STATE_IDLE:
         MESCpwm_generateBreak(_motor);
-      // Do basically nothing
-      break;
+		// Do basically nothing
+		break;
 
     case MOTOR_STATE_DETECTING:
-
-      if ((_motor->hall.current_hall_state == 7)) { // no hall sensors detected, all GPIO pulled high
-    	_motor->MotorSensorMode = MOTOR_SENSOR_MODE_SENSORLESS;
-        _motor->MotorState = MOTOR_STATE_GET_KV;
-      } else if (_motor->hall.current_hall_state == 0) {
-        _motor->MotorState = MOTOR_STATE_ERROR;
-        MotorError = MOTOR_ERROR_HALL0;
-      } else {
-        // hall sensors detected
-    	  _motor->MotorSensorMode = MOTOR_SENSOR_MODE_HALL;
-        MESCmeasure_GetHallTable(_motor);
-        MESCFOC(_motor);
-      }
-      break;
+		if ((_motor->hall.current_hall_state == 7)) { // no hall sensors detected, all GPIO pulled high
+			_motor->MotorSensorMode = MOTOR_SENSOR_MODE_SENSORLESS;
+			_motor->MotorState = MOTOR_STATE_GET_KV;
+		} else if (_motor->hall.current_hall_state == 0) {
+			_motor->MotorState = MOTOR_STATE_ERROR;
+			MotorError = MOTOR_ERROR_HALL0;
+		} else {
+			// hall sensors detected
+			_motor->MotorSensorMode = MOTOR_SENSOR_MODE_HALL;
+			MESCmeasure_GetHallTable(_motor);
+			MESCFOC(_motor);
+		}
+		break;
 
     case MOTOR_STATE_MEASURING:
-    			// Every PWM cycle we enter this function until
-                // the resistance measurement has converged at a
-                // good value. Once the measurement is complete,
-                // Rphase is set, and this is no longer called
-          MESCmeasure_RL(_motor);
+		// Every PWM cycle we enter this function until
+		// the resistance measurement has converged at a
+		// good value. Once the measurement is complete,
+		// Rphase is set, and this is no longer called
+        MESCmeasure_RL(_motor);
         break;
 
     case MOTOR_STATE_GET_KV:
-      MESCmeasure_GetkV(_motor);
-
-      break;
+      	MESCmeasure_GetkV(_motor);
+      	break;
 
     case MOTOR_STATE_ERROR:
-      MESCpwm_generateBreak(_motor);  // Generate a break state (software disabling all PWM)
-                        // Now panic and freak out
-      //Get the encoder angle still; we would like to continue tracking angle, there is no harm in it...
-	  getIncEncAngle(_motor);
-	  if(_motor->MotorSensorMode == MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER){
-		  _motor->FOC.FOCAngle = _motor->FOC.enc_angle;
-	  }else{
-	  //Do the same for the flux observer...
-	  getRawADCVph(_motor);
-	  ADCPhaseConversion(_motor);
-	  MESCTrack(_motor);
-	  MESCfluxobs_run(_motor);
-	  }
+		MESCpwm_generateBreak(_motor);  // Generate a break state (software disabling all PWM)
+							// Now panic and freak out
+		//Get the encoder angle still; we would like to continue tracking angle, there is no harm in it...
+		getIncEncAngle(_motor);
+		if(_motor->MotorSensorMode == MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER){
+			_motor->FOC.FOCAngle = _motor->FOC.enc_angle;
+		}else{
+		//Do the same for the flux observer...
+		getRawADCVph(_motor);
+		ADCPhaseConversion(_motor);
+		MESCTrack(_motor);
+		MESCfluxobs_run(_motor);
+		}
 
-      break;
+		break;
 
     case MOTOR_STATE_ALIGN:
-      // Turn on at a given voltage at electricalangle0;
-      break;
+		// Turn on at a given voltage at electricalangle0;
+		break;
 
     case MOTOR_STATE_TEST:
     	switch(TestMode){
-			case TEST_TYPE_DOUBLE_PULSE:
-				// Double pulse test
-				MESCmeasure_DoublePulseTest(_motor);
-				break;
-			case TEST_TYPE_DEAD_TIME_IDENT:
-				//Here we are going to pull all phases low, and then increase the duty on one phase until we register a current response.
-				//This duty represents the dead time during which there is no current response
-				MESCmeasure_GetDeadtime(_motor);
-				break;
-			case TEST_TYPE_HARDWARE_VERIFICATION:
-				//Here we want a function that pulls all phases low, then all high and verifies a response
-				//Then we want to show a current response with increasing phase duty
-				break;
-
-
+		case TEST_TYPE_DOUBLE_PULSE:
+			// Double pulse test
+			MESCmeasure_DoublePulseTest(_motor);
+			break;
+		case TEST_TYPE_DEAD_TIME_IDENT:
+			//Here we are going to pull all phases low, and then increase the duty on one phase until we register a current response.
+			//This duty represents the dead time during which there is no current response
+			MESCmeasure_GetDeadtime(_motor);
+			break;
+		case TEST_TYPE_HARDWARE_VERIFICATION:
+			//Here we want a function that pulls all phases low, then all high and verifies a response
+			//Then we want to show a current response with increasing phase duty
+			break;
     	}
     break;
 
     case MOTOR_STATE_RECOVERING:
-	      deadshort(_motor); //Function to startup motor from running without phase sensors
-      break;
+	    deadshort(_motor); //Function to startup motor from running without phase sensors
+      	break;
 
     case MOTOR_STATE_SLAMBRAKE:
-      if((fabsf(_motor->Conv.Iu)>_motor->input_vars.max_request_Idq.q)||
-		  (fabsf(_motor->Conv.Iv)>_motor->input_vars.max_request_Idq.q)||
-		  (fabsf(_motor->Conv.Iw)>_motor->input_vars.max_request_Idq.q)){
-    	  MESCpwm_generateBreak(_motor);
-      }else{
-    	  MESCpwm_generateEnable(_motor);
-//    	  htim1.Instance->CCR1 = 0;
-//    	  htim1.Instance->CCR2 = 0;
-//    	  htim1.Instance->CCR3 = 0;
-    	  //We use "0", since this corresponds to all high side FETs off, always, and all low side ones on, always.
-    	  //This means that current measurement can continue on low side and phase shunts, so over current protection remains active.
-    	  if(_motor->MotorSensorMode ==MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER){
-    		  getIncEncAngle(_motor);
-    		  _motor->FOC.FOCAngle = _motor->FOC.enc_angle;
-//     		  if((_motor->FOC.parkangle-_motor->FOC.FOCAngle)>16384){
-//     			  if((_motor->FOC.parkangle-_motor->FOC.FOCAngle)>32768){
-//    			  _motor->FOC.parkangle = _motor->FOC.FOCAngle+16384;
-//     			  }
-//    		  }
-//     		  if((_motor->FOC.FOCAngle-_motor->FOC.parkangle)>16384){
-//    			  if((_motor->FOC.FOCAngle-_motor->FOC.parkangle)<32767){
-//    				  _motor->FOC.parkangle = _motor->FOC.FOCAngle-16384;
-//    			  }
-//    		  }
-    		  diff =(int)(_motor->FOC.FOCAngle-_motor->FOC.parkangle);
-    		  if(abs(diff)>16384){
-    			  if(diff<0){
-    				  _motor->FOC.parkangle = _motor->FOC.FOCAngle+16000;
-    			  __NOP();
-    			  }else{
-    				  _motor->FOC.parkangle = _motor->FOC.FOCAngle-16000;
-        			  __NOP();
-    			  }
-    		  }
-    		  if(abs(diff)<8000){
-				  _motor->FOC.Vdq.q = 0.0f;
-				  _motor->FOC.Vdq.d = 0.0f;
-				  _motor->FOC.park_current_now = 0.0f;
-    		  }else{
-    			  _motor->FOC.Idq_req.q = -_motor->FOC.park_current*(float)diff/(float)8192;//Fill with some PID logic
-    			  _motor->FOC.Idq_req.d = 0.0f;//
-    			  if(diff>0){
-    				  _motor->FOC.Idq_req.q = _motor->FOC.Idq_req.q + _motor->FOC.park_current;
-    			  }else{
-    				  _motor->FOC.Idq_req.q = _motor->FOC.Idq_req.q - _motor->FOC.park_current;
-    			  }
-    			  MESCFOC(_motor);
-    			  _motor->FOC.park_current_now = _motor->FOC.Idq_req.q;
-    		  }
-    	  }else{
-			  _motor->FOC.Vdq.q = 0.0f;
-			  _motor->FOC.Vdq.d = 0.0f;
-			  _motor->FOC.park_current_now = 0.0f;
-    	  }
-
-
-      }
-    break;
+		if((fabsf(_motor->Conv.Iu)>_motor->input_vars.max_request_Idq.q)||
+		(fabsf(_motor->Conv.Iv)>_motor->input_vars.max_request_Idq.q)||
+		(fabsf(_motor->Conv.Iw)>_motor->input_vars.max_request_Idq.q)){
+			MESCpwm_generateBreak(_motor);
+		}else{
+			MESCpwm_generateEnable(_motor);
+//    	    htim1.Instance->CCR1 = 0;
+//    	    htim1.Instance->CCR2 = 0;
+//    	    htim1.Instance->CCR3 = 0;
+			//We use "0", since this corresponds to all high side FETs off, always, and all low side ones on, always.
+			//This means that current measurement can continue on low side and phase shunts, so over current protection remains active.
+			if(_motor->MotorSensorMode ==MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER){
+				getIncEncAngle(_motor);
+				_motor->FOC.FOCAngle = _motor->FOC.enc_angle;
+//     		    if((_motor->FOC.parkangle-_motor->FOC.FOCAngle)>16384){
+//     			    if((_motor->FOC.parkangle-_motor->FOC.FOCAngle)>32768){
+//    			    _motor->FOC.parkangle = _motor->FOC.FOCAngle+16384;
+//     			    }
+//    		    }
+//     		    if((_motor->FOC.FOCAngle-_motor->FOC.parkangle)>16384){
+//    			    if((_motor->FOC.FOCAngle-_motor->FOC.parkangle)<32767){
+//    			  	  _motor->FOC.parkangle = _motor->FOC.FOCAngle-16384;
+//    			    }
+//    		    }
+				diff =(int)(_motor->FOC.FOCAngle-_motor->FOC.parkangle);
+				if(abs(diff)>16384){
+					if(diff<0){
+						_motor->FOC.parkangle = _motor->FOC.FOCAngle+16000;
+					__NOP();
+					}else{
+						_motor->FOC.parkangle = _motor->FOC.FOCAngle-16000;
+						__NOP();
+					}
+				}
+				if(abs(diff)<8000){
+					_motor->FOC.Vdq.q = 0.0f;
+					_motor->FOC.Vdq.d = 0.0f;
+					_motor->FOC.park_current_now = 0.0f;
+				}else{
+					_motor->FOC.Idq_req.q = -_motor->FOC.park_current*(float)diff/(float)8192;//Fill with some PID logic
+					_motor->FOC.Idq_req.d = 0.0f;//
+					if(diff>0){
+						_motor->FOC.Idq_req.q = _motor->FOC.Idq_req.q + _motor->FOC.park_current;
+					}else{
+						_motor->FOC.Idq_req.q = _motor->FOC.Idq_req.q - _motor->FOC.park_current;
+					}
+					MESCFOC(_motor);
+					_motor->FOC.park_current_now = _motor->FOC.Idq_req.q;
+				}
+			}else{
+				_motor->FOC.Vdq.q = 0.0f;
+				_motor->FOC.Vdq.d = 0.0f;
+				_motor->FOC.park_current_now = 0.0f;
+			}
+      	}
+    	break;
     case MOTOR_STATE_RUN_BLDC:
     	getRawADCVph(_motor);
     	ADCPhaseConversion(_motor);
@@ -689,7 +682,7 @@ void fastLoop(MESC_motor_typedef *_motor) {
 		_motor->MotorState = MOTOR_STATE_ERROR;
 		MESCpwm_generateBreak(_motor);
 		break;
-  }
+  	}
 #ifdef SOFTWARE_ADC_REGULAR
        HAL_ADC_Start(&hadc1); //Try to eliminate the HAL call, slow and inefficient. Leaving this here for now.
         //hadc1.Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
