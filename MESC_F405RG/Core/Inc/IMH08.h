@@ -55,6 +55,7 @@
 //#define GET_THROTTLE_INPUT2 	0 //There is no second throttle input
 //#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[3]  // Throttle2
 #define GET_FETU_T 	_motor->Raw.MOSu_T =  0.9f * _motor->Raw.MOSu_T  + 0.1f * ADC2_buffer[3] //Temperature on PB1
+//#define USE_MOTOR_TEMP_SENSOR
 #define GET_MOTOR_T _motor->Raw.Motor_T = 0.9f * _motor->Raw.Motor_T + 0.1f * ADC1_buffer[4]
 
 //#define USE_FIELD_WEAKENING

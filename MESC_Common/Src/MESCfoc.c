@@ -205,6 +205,12 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 	_motor->options.use_phase_balancing = false;
 #endif
 
+#ifdef USE_MOTOR_TEMP_SENSOR
+	_motor->options.has_motor_temp_sensor = true;
+#else
+	_motor->options.has_motor_temp_sensor = false;
+#endif
+
 	_motor->options.field_weakening = FIELD_WEAKENING_OFF;
 #ifdef USE_FIELD_WEAKENING
 	_motor->options.field_weakening = FIELD_WEAKENING_V1;
@@ -1995,6 +2001,14 @@ void FWRampDown(MESC_motor_typedef *_motor){
 	}
 }
 
+/**
+ * @brief checkes temperature against the limits and sets the dTmax value to the
+ * maximum temperature difference between the current temperature and the limit (Thot)
+ * @param _motor pointer to the motor structure
+ * @param T the current temperature
+ * @param dTmax pointer to the maximum temperature difference
+ * @param errorcode the error code to be set if the temperature is too high
+ */
 static void handleThrottleTemperature(MESC_motor_typedef *_motor, float const T, float * const dTmax, int const errorcode )
 {
 	float dT = 0.0f;
