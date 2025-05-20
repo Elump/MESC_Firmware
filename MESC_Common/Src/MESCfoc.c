@@ -215,7 +215,6 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 #ifdef USE_FIELD_WEAKENING
 	_motor->options.field_weakening = FIELD_WEAKENING_V1;
 #endif
-
 #ifdef USE_FIELD_WEAKENINGV2
 	_motor->options.field_weakening = FIELD_WEAKENING_V2;
 #endif
@@ -229,7 +228,6 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 #ifdef USE_SQRT_CIRCLE_LIM
 	_motor->options.sqrt_circle_lim = SQRT_CIRCLE_LIM_ON;
 #endif
-
 #ifdef USE_SQRT_CIRCLE_LIM_VD
 	_motor->options.sqrt_circle_lim = SQRT_CIRCLE_LIM_VD;
 #endif
@@ -1309,121 +1307,119 @@ case SQRT_CIRCLE_LIM_VD:
   }
 
 void MESC_Slow_IRQ_handler(MESC_motor_typedef *_motor){
-//#ifdef SLOWLED
-//	  SLOWLED->BSRR = SLOWLEDIO;
-//#endif
-	  slowLoop(_motor);
-//#ifdef SLOWLED
-//		SLOWLED->BSRR = SLOWLEDIO<<16U;
-//#endif
-  }
-  extern uint32_t ADC_buffer[6];
+	//#ifdef SLOWLED
+	//	  SLOWLED->BSRR = SLOWLEDIO;
+	//#endif
+	slowLoop(_motor);
+	//#ifdef SLOWLED
+	//		SLOWLED->BSRR = SLOWLEDIO<<16U;
+	//#endif
+}
 
 float  Square(float x){ return((x)*(x));}
 
-  void slowLoop(MESC_motor_typedef *_motor) {
-// In this loop, we will fetch the throttle values, and run functions that
-// are critical, but do not need to be executed very often e.g. adjustment
-// for battery voltage change
-///Process buttons for direction
+void slowLoop(MESC_motor_typedef *_motor) {
+	// In this loop, we will fetch the throttle values, and run functions that
+	// are critical, but do not need to be executed very often e.g. adjustment
+	// for battery voltage change
+	///Process buttons for direction
 
-		houseKeeping(_motor);	//General dross that keeps things ticking over, like nudging the observer
-		MESCinput_Collect(_motor); //Get all the throttle inputs
-		switch(_motor->options.app_type){
-			case APP_NONE:
-				_motor->key_bits &= ~APP_KEY;
-				No_app(_motor); //No_app just sums the inputs
-				break;
-			case APP_VEHICLE:
-				Vehicle_app(_motor);
-				break;
-			case APP_2:
-				break;
-			case APP_3:
-				break;
+	houseKeeping(_motor);	//General dross that keeps things ticking over, like nudging the observer
+	MESCinput_Collect(_motor); //Get all the throttle inputs
+	switch(_motor->options.app_type){
+		case APP_NONE:
+			_motor->key_bits &= ~APP_KEY;
+			No_app(_motor); //No_app just sums the inputs
+			break;
+		case APP_VEHICLE:
+			Vehicle_app(_motor);
+			break;
+		case APP_2:
+			break;
+		case APP_3:
+			break;
 
-		}
+	}
 
-
-	  switch(_motor->ControlMode){
-		  case MOTOR_CONTROL_MODE_TORQUE:
-			  //Dealt with in APP_NONE
-			  break;
-		  case MOTOR_CONTROL_MODE_POSITION:
-			  RunPosControl(_motor);
-			  break;
-		  case MOTOR_CONTROL_MODE_SPEED:
-			  //TBC PID loop to convert eHz feedback to an iq request
-			  RunSpeedControl(_motor);
-			  break;
-		  case MOTOR_CONTROL_MODE_DUTY:
-			  _motor->FOC.Idq_prereq = _motor->input_vars.max_request_Idq;
-			  //Sum the total duty request
-			  float total_in = 	_motor->input_vars.ADC1_req + _motor->input_vars.ADC2_req +
-					  	  	    _motor->input_vars.RCPWM_req + _motor->input_vars.UART_req + _motor->input_vars.ADC12_diff_req +
-								_motor->input_vars.remote_ADC1_req + _motor->input_vars.remote_ADC2_req;
-			  if(fabsf(total_in)>0.01f){
-				  total_in = clamp(total_in, -1.0f, 1.0f);
-				  _motor->FOC.Duty_scaler = fabsf(total_in); //Assign the duty here
-			  } else {
-				  total_in = 0.001f;
-				  _motor->FOC.Duty_scaler = fabsf(total_in);
-			  }
-			  break;
-		  case MOTOR_CONTROL_MODE_MEASURING:
-			_motor->MotorSensorMode = MOTOR_SENSOR_MODE_OPENLOOP;
-			_motor->HFI.Type = HFI_TYPE_NONE;
-			_motor->FOC.Id_pgain = 0.0f;
-			_motor->FOC.Iq_pgain = 0.0f;
-			_motor->FOC.Id_igain = 0.0f;
-			_motor->FOC.Iq_igain = 0.0f;
-			_motor->FOC.openloop_step = (uint16_t)(600.0f*65536/_motor->FOC.pwm_frequency);//300Hz tone
-			_motor->FOC.Idq_int_err.d = 10.0f;//1V
-			_motor->FOC.Idq_int_err.q = 0.0f;//1V
-			_motor->FOC.Current_bandwidth = 0.0f;
-			_motor->FOC.PLL_int = 0.0f;
-			_motor->FOC.PLL_ki = 0.0f;
-			_motor->FOC.PLL_ki = 0.0f;
-			_motor->FOC.PLL_error = 0.0f;
-
-			_motor->m.R =10.0f*_motor->FOC.Idq_smoothed.d /(_motor->FOC.Idq_smoothed.d*_motor->FOC.Idq_smoothed.d +
-					_motor->FOC.Idq_smoothed.q*_motor->FOC.Idq_smoothed.q);
-			_motor->m.L_D = -10.0f*_motor->FOC.Idq_smoothed.q/(2.0f*3.1415f*600.0f*(_motor->FOC.Idq_smoothed.d*_motor->FOC.Idq_smoothed.d +
-					_motor->FOC.Idq_smoothed.q*_motor->FOC.Idq_smoothed.q));
-			if(_motor->MotorState !=MOTOR_STATE_ERROR){
-				_motor->MotorState = MOTOR_STATE_RUN;
+	switch(_motor->ControlMode){
+		case MOTOR_CONTROL_MODE_TORQUE:
+			//Dealt with in APP_NONE
+			break;
+		case MOTOR_CONTROL_MODE_POSITION:
+			RunPosControl(_motor);
+			break;
+		case MOTOR_CONTROL_MODE_SPEED:
+			//TBC PID loop to convert eHz feedback to an iq request
+			RunSpeedControl(_motor);
+			break;
+		case MOTOR_CONTROL_MODE_DUTY:
+			_motor->FOC.Idq_prereq = _motor->input_vars.max_request_Idq;
+			//Sum the total duty request
+			float total_in = 	_motor->input_vars.ADC1_req + _motor->input_vars.ADC2_req +
+							_motor->input_vars.RCPWM_req + _motor->input_vars.UART_req + _motor->input_vars.ADC12_diff_req +
+							_motor->input_vars.remote_ADC1_req + _motor->input_vars.remote_ADC2_req;
+			if(fabsf(total_in)>0.01f){
+				total_in = clamp(total_in, -1.0f, 1.0f);
+				_motor->FOC.Duty_scaler = fabsf(total_in); //Assign the duty here
+			} else {
+				total_in = 0.001f;
+				_motor->FOC.Duty_scaler = fabsf(total_in);
 			}
-			  break;
-		  case MOTOR_CONTROL_MODE_HANDBRAKE:
-			  if((_motor->MotorState==MOTOR_STATE_RUN)||(_motor->MotorState==MOTOR_STATE_TRACKING)){
-				  if((fabsf(_motor->FOC.Vdq.q)<0.1f*_motor->Conv.Vbus)){//Check it is not error or spinning fast!
-					  _motor->MotorState = MOTOR_STATE_SLAMBRAKE;
-				  }else{//We are going fast, just disable PWM
-					  _motor->MotorState = MOTOR_STATE_TRACKING;
-						MESCpwm_generateBreak(_motor);
-				  }
-			  }
-			  float req_now = (_motor->input_vars.UART_req + _motor->input_vars.max_request_Idq.q * (_motor->input_vars.ADC1_req + _motor->input_vars.ADC2_req + _motor->input_vars.RCPWM_req));
+			break;
+		case MOTOR_CONTROL_MODE_MEASURING:
+		_motor->MotorSensorMode = MOTOR_SENSOR_MODE_OPENLOOP;
+		_motor->HFI.Type = HFI_TYPE_NONE;
+		_motor->FOC.Id_pgain = 0.0f;
+		_motor->FOC.Iq_pgain = 0.0f;
+		_motor->FOC.Id_igain = 0.0f;
+		_motor->FOC.Iq_igain = 0.0f;
+		_motor->FOC.openloop_step = (uint16_t)(600.0f*65536/_motor->FOC.pwm_frequency);//300Hz tone
+		_motor->FOC.Idq_int_err.d = 10.0f;//1V
+		_motor->FOC.Idq_int_err.q = 0.0f;//1V
+		_motor->FOC.Current_bandwidth = 0.0f;
+		_motor->FOC.PLL_int = 0.0f;
+		_motor->FOC.PLL_ki = 0.0f;
+		_motor->FOC.PLL_ki = 0.0f;
+		_motor->FOC.PLL_error = 0.0f;
 
-			  _motor->FOC.Idq_prereq.q = req_now;
-			  // CL: if more than 5% Iq request, leave HANDBRAKE
-			  if((req_now>(0.05f*_motor->input_vars.max_request_Idq.q))&&(req_now>_motor->FOC.park_current_now)&&(_motor->MotorState == MOTOR_STATE_SLAMBRAKE)){
-				  _motor->MotorState = MOTOR_STATE_TRACKING;
-				  _motor->ControlMode = MOTOR_CONTROL_MODE_TORQUE;
-			  }
-			  break;
-		  default:
-			  __NOP();
-			  break;
-	  }
-	  /////////////////Handle the safe startup
-	  safeStart(_motor);
-	  /////////////////Handle the keybits (initialised flag, killswitch and safestart)
-	  if((_motor->key_bits)){
-		  _motor->FOC.Idq_prereq.q = 0.0f;
-		  _motor->FOC.Idq_prereq.d = 0.0f;
-	  }
-		///////////////////////Run the state machine//////////////////////////////////
+		_motor->m.R =10.0f*_motor->FOC.Idq_smoothed.d /(_motor->FOC.Idq_smoothed.d*_motor->FOC.Idq_smoothed.d +
+				_motor->FOC.Idq_smoothed.q*_motor->FOC.Idq_smoothed.q);
+		_motor->m.L_D = -10.0f*_motor->FOC.Idq_smoothed.q/(2.0f*3.1415f*600.0f*(_motor->FOC.Idq_smoothed.d*_motor->FOC.Idq_smoothed.d +
+				_motor->FOC.Idq_smoothed.q*_motor->FOC.Idq_smoothed.q));
+		if(_motor->MotorState !=MOTOR_STATE_ERROR){
+			_motor->MotorState = MOTOR_STATE_RUN;
+		}
+			break;
+		case MOTOR_CONTROL_MODE_HANDBRAKE:
+			if((_motor->MotorState==MOTOR_STATE_RUN)||(_motor->MotorState==MOTOR_STATE_TRACKING)){
+				if((fabsf(_motor->FOC.Vdq.q)<0.1f*_motor->Conv.Vbus)){//Check it is not error or spinning fast!
+					_motor->MotorState = MOTOR_STATE_SLAMBRAKE;
+				}else{//We are going fast, just disable PWM
+					_motor->MotorState = MOTOR_STATE_TRACKING;
+					MESCpwm_generateBreak(_motor);
+				}
+			}
+			float req_now = (_motor->input_vars.UART_req + _motor->input_vars.max_request_Idq.q * (_motor->input_vars.ADC1_req + _motor->input_vars.ADC2_req + _motor->input_vars.RCPWM_req));
+
+			_motor->FOC.Idq_prereq.q = req_now;
+			// CL: if more than 5% Iq request, leave HANDBRAKE
+			if((req_now>(0.05f*_motor->input_vars.max_request_Idq.q))&&(req_now>_motor->FOC.park_current_now)&&(_motor->MotorState == MOTOR_STATE_SLAMBRAKE)){
+				_motor->MotorState = MOTOR_STATE_TRACKING;
+				_motor->ControlMode = MOTOR_CONTROL_MODE_TORQUE;
+			}
+			break;
+		default:
+			__NOP();
+			break;
+	}
+	/////////////////Handle the safe startup
+	safeStart(_motor);
+	/////////////////Handle the keybits (initialised flag, killswitch and safestart)
+	if((_motor->key_bits)){
+		_motor->FOC.Idq_prereq.q = 0.0f;
+		_motor->FOC.Idq_prereq.d = 0.0f;
+	}
+	///////////////////////Run the state machine//////////////////////////////////
 	switch(_motor->MotorState){
 		case MOTOR_STATE_TRACKING:
 			ThrottleTemperature(_motor);

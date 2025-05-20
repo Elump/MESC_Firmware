@@ -49,11 +49,11 @@
 
 //Inputs
 // Smops: PA4 & PA5 not working due to some reason, so using PA6
-#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = 0.99f * _motor->Raw.ADC_in_ext1 + 0.01f * ADC1_buffer[3]  // Throttle
+#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = 0.99f * _motor->Raw.ADC_in_ext1 + 0.01f * ADC1_buffer[1]  // Throttle
 //#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = hadc1.Instance->JDR3
 //#define GET_THROTTLE_INPUT 	_motor->Raw.ADC_in_ext1 = 0.9f * _motor->Raw.ADC_in_ext1 + 0.1f * hadc1.Instance->JDR3;  // Throttle for MP2 with F405 pill
 //#define GET_THROTTLE_INPUT2 	0 //There is no second throttle input
-//#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[3]  // Throttle2
+#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[2]  // Throttle2
 #define GET_FETU_T 	_motor->Raw.MOSu_T =  0.9f * _motor->Raw.MOSu_T  + 0.1f * ADC2_buffer[3] //Temperature on PB1
 //#define USE_MOTOR_TEMP_SENSOR
 #define GET_MOTOR_T _motor->Raw.Motor_T = 0.9f * _motor->Raw.Motor_T + 0.1f * ADC1_buffer[4]
