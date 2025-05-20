@@ -920,7 +920,6 @@ float fast_atan2(float y, float x) {
 
 /////////////////////////////////////////////////////////////////////////////
 ////////Hall Sensor Implementation///////////////////////////////////////////
-
 void hallAngleEstimator(MESC_motor_typedef *_motor) {  // Implementation using the mid point of the hall
 						   	   	   	   	   	   	   	   // sensor angles, which should be much more
 						   	   	   	   	   	   	   	   // reliable to generate that the edges
@@ -1065,7 +1064,7 @@ void hallAngleEstimator(MESC_motor_typedef *_motor) {  // Implementation using t
       float Vmagnow2;
 switch(_motor->options.sqrt_circle_lim){
 case SQRT_CIRCLE_LIM_OFF:
-	  //Fixed Vd and Vq limits.
+	// Fixed Vd and Vq limits.
     // These limits are experimental, but result in close to 100% modulation.
     // Since Vd and Vq are orthogonal, limiting Vd is not especially helpful
     // in reducing overall voltage magnitude, since the relation
@@ -1075,16 +1074,16 @@ case SQRT_CIRCLE_LIM_OFF:
     // cross coupling).
 
     // Bounding integral
-	  _motor->FOC.Idq_int_err.d = clamp(_motor->FOC.Idq_int_err.d, -_motor->FOC.Vdint_max, _motor->FOC.Vdint_max);
-	  _motor->FOC.Idq_int_err.q = clamp(_motor->FOC.Idq_int_err.q, -_motor->FOC.Vqint_max, _motor->FOC.Vqint_max);
+	_motor->FOC.Idq_int_err.d = clamp(_motor->FOC.Idq_int_err.d, -_motor->FOC.Vdint_max, _motor->FOC.Vdint_max);
+	_motor->FOC.Idq_int_err.q = clamp(_motor->FOC.Idq_int_err.q, -_motor->FOC.Vqint_max, _motor->FOC.Vqint_max);
 
-    //Bounding output
+    //B ounding output
     _motor->FOC.Vdq.d = clamp(_motor->FOC.Vdq.d, -_motor->FOC.Vd_max, _motor->FOC.Vd_max);
     _motor->FOC.Vdq.q = clamp(_motor->FOC.Vdq.q, -_motor->FOC.Vq_max, _motor->FOC.Vq_max);
 	break;
 case SQRT_CIRCLE_LIM_ON:
     Vmagnow2 = _motor->FOC.Vdq.d*_motor->FOC.Vdq.d+_motor->FOC.Vdq.q*_motor->FOC.Vdq.q;
-    //Check if the vector length is greater than the available voltage
+    // Check if the vector length is greater than the available voltage
     _motor->FOC.Voltage = sqrtf(Vmagnow2);
     if(_motor->FOC.Voltage > _motor->FOC.Vmag_max){
 		  //float Vmagnow = sqrtf(Vmagnow2);
@@ -1342,7 +1341,7 @@ float  Square(float x){ return((x)*(x));}
 
 	  switch(_motor->ControlMode){
 		  case MOTOR_CONTROL_MODE_TORQUE:
-//Dealt with in APP_NONE
+			  //Dealt with in APP_NONE
 			  break;
 		  case MOTOR_CONTROL_MODE_POSITION:
 			  RunPosControl(_motor);
@@ -1401,6 +1400,7 @@ float  Square(float x){ return((x)*(x));}
 			  float req_now = (_motor->input_vars.UART_req + _motor->input_vars.max_request_Idq.q * (_motor->input_vars.ADC1_req + _motor->input_vars.ADC2_req + _motor->input_vars.RCPWM_req));
 
 			  _motor->FOC.Idq_prereq.q = req_now;
+			  // CL: if more than 5% Iq request, leave HANDBRAKE
 			  if((req_now>(0.05f*_motor->input_vars.max_request_Idq.q))&&(req_now>_motor->FOC.park_current_now)&&(_motor->MotorState == MOTOR_STATE_SLAMBRAKE)){
 				  _motor->MotorState = MOTOR_STATE_TRACKING;
 				  _motor->ControlMode = MOTOR_CONTROL_MODE_TORQUE;
@@ -2024,7 +2024,7 @@ void ThrottleTemperature(MESC_motor_typedef *_motor){
 		handleThrottleTemperature( _motor, _motor->Conv.Motor_T, &dTmax, ERROR_OVERTEMP_MOTOR );
 	}
 
-	_motor->FOC.T_rollback = (1.0f-dTmax/(_motor->Raw.MOS_temp.limit.Tmax-_motor->Raw.MOS_temp.limit.Thot));
+	_motor->FOC.T_rollback = (1.0f-dTmax/(_motor->Raw.MOS_temp.limit.Tmax - _motor->Raw.MOS_temp.limit.Thot));
 	if(_motor->FOC.T_rollback<=0.0f){
 		_motor->FOC.T_rollback = 0.0f;
 	}

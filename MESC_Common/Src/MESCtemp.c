@@ -280,7 +280,13 @@ uint32_t temp_get_adc( TEMP const * const temp, float const T )
 
     return adc_raw;
 }
-
+/**
+ * @brief Check the temperature and return the state
+ * @param temp The structure with min/max temperature limits
+ * @param T The temperature to check
+ * @param dT return the detla temperature (T - Thot)
+ * @return The state of the temperature
+ */
 TEMPState temp_check( TEMP const * const temp, float const T, float * const dT )
 {
 	// If there is no temperature reading, assume it is OK

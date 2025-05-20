@@ -12,15 +12,17 @@
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
 
-#define SHUNT_POLARITY -1.0f         //changed for IHM08
-
-#define ABS_MAX_PHASE_CURRENT 18.0f //changed for IHM08
+#define ABS_MAX_PHASE_CURRENT 20.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
 #define ABS_MIN_BUS_VOLTAGE 9.0f   //changed for IHM08
+
 #define R_SHUNT 0.01f               //changed for IHM08
 #define OPGAIN 4.7f                 //changed for IHM08
-
-#define DAC_REF						          //added for F405RG
+#define SHUNT_POLARITY -1.0f         //changed for IHM08
+// CL: in case of just 2 current sensors
+//#define MISSING_UCURRSENSOR
+//#define MISSING_VCURRSENSOR
+//#define MISSING_WCURRSENSOR
 
 #define R_VBUS_BOTTOM 9310.0f //Phase and Vbus voltage sensors
 #define R_VBUS_TOP 169000.0f
@@ -40,20 +42,19 @@
 #define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_TORQUE  //added for F405RG
 //#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_DUTY
 
-#define ADC1OOR 4094              //added for F405RG
-
 #define SEVEN_SECTOR		//Normal SVPWM implemented as midpoint clamp. If not defined, you will get 5 sector, bottom clamp
 #define DEADTIME_COMP		//This injects extra PWM duty onto the timer which effectively removes the dead time.
 #define DEADTIME_COMP_V 10
 //#define MAX_MODULATION 1.10f //Use this with 5 sector modulation if you want extra speed
 
 //Inputs
-#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = ADC1_buffer[3]  // Throttle
+// Smops: PA4 & PA5 not working due to some reason, so using PA6
+#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = 0.99f * _motor->Raw.ADC_in_ext1 + 0.01f * ADC1_buffer[3]  // Throttle
 //#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = hadc1.Instance->JDR3
 //#define GET_THROTTLE_INPUT 	_motor->Raw.ADC_in_ext1 = 0.9f * _motor->Raw.ADC_in_ext1 + 0.1f * hadc1.Instance->JDR3;  // Throttle for MP2 with F405 pill
 //#define GET_THROTTLE_INPUT2 	0 //There is no second throttle input
 //#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[3]  // Throttle2
-#define GET_FETU_T 	_motor->Raw.MOSu_T = 	0.9f * _motor->Raw.MOSu_T + 0.1f * ADC2_buffer[3] //Temperature on PB1
+#define GET_FETU_T 	_motor->Raw.MOSu_T =  0.9f * _motor->Raw.MOSu_T  + 0.1f * ADC2_buffer[3] //Temperature on PB1
 #define GET_MOTOR_T _motor->Raw.Motor_T = 0.9f * _motor->Raw.Motor_T + 0.1f * ADC1_buffer[4]
 
 //#define USE_FIELD_WEAKENING
@@ -92,9 +93,9 @@
 #define HALL_VOLTAGE_THRESHOLD 1.5f
 
 //#define USE_SPI_ENCODER //Only supports TLE5012B in SSC mode using onewire SPI on SPI3 F405...
-#define POLE_PAIRS 7
-#define ENCODER_E_OFFSET 14500
-#define POLE_ANGLE (65536/POLE_PAIRS)
+//#define POLE_PAIRS 7
+//#define ENCODER_E_OFFSET 14500
+//#define POLE_ANGLE (65536/POLE_PAIRS)
 
 //#define FASTLED GPIOB
 //#define FASTLEDIO GPIO_PIN_7
