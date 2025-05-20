@@ -794,7 +794,9 @@ void ADCConversion(MESC_motor_typedef *_motor) {
 		handleError(_motor, ERROR_OVERVOLTAGE);
 	}
 	if (_motor->Conv.Vbus < g_hw_setup.Vmin){
-		handleError(_motor, ERROR_UNDERVOLTAGE);
+		//handleError(_motor, ERROR_UNDERVOLTAGE);
+		// CL: no Vbus measurement available before slowloop
+		if(_motor->MotorState != MOTOR_STATE_INITIALISING) handleError(_motor, ERROR_UNDERVOLTAGE);
 	}
 
 //Deal with terrible hardware choice of only having two current sensors

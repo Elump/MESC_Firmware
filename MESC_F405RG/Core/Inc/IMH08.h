@@ -11,6 +11,7 @@
 
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
+#define SAFE_START_DEFAULT 200 //number of cycles needed without torque request before releasing control
 
 #define ABS_MAX_PHASE_CURRENT 20.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
