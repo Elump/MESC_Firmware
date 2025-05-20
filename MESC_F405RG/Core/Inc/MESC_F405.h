@@ -45,8 +45,8 @@
 
 
 	/////////////////ADC///////////////
-#define  ADC1MIN 1300
-#define  ADC1MAX 2400
+#define  ADC1MIN 1000
+#define  ADC1MAX 3000
 #define  ADC2MIN 1200
 #define  ADC2MAX 4095
 

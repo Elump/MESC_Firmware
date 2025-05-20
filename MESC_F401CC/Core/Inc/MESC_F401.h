@@ -38,22 +38,22 @@
 
 
 	/////////////////ADC///////////////
-#define  ADC1MIN 1200
-#define  ADC1MAX 2700
+#define  ADC1MIN 1000
+#define  ADC1MAX 3000
 #define  ADC2MIN 1200
 #define  ADC2MAX 4095
 
 #define ADC1_POLARITY 1.0f
 #define ADC2_POLARITY -1.0f
 
-#define DEFAULT_INPUT	0b1001 //0b...wxyz where w is UART, x is RCPWM, y is ADC2 z is ADC1
+#define DEFAULT_INPUT	0b0001 //0b...wxyz where w is UART, x is RCPWM, y is ADC2 z is ADC1
 
 
 //Use the Ebike Profile tool
 #define USE_PROFILE
 
 #ifndef FIELD_WEAKENING_CURRENT
-#define FIELD_WEAKENING_CURRENT 10.0f //This does not set whether FW is used, just the default current
+#define FIELD_WEAKENING_CURRENT 1.0f //This does not set whether FW is used, just the default current
 #endif
 
 #ifndef FIELD_WEAKENING_THRESHOLD

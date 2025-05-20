@@ -12,9 +12,9 @@
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
 
-#define SHUNT_POLARITY 1.0f         //changed for IHM08
+#define SHUNT_POLARITY -1.0f         //changed for IHM08
 
-#define ABS_MAX_PHASE_CURRENT 15.0f //changed for IHM08
+#define ABS_MAX_PHASE_CURRENT 18.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
 #define ABS_MIN_BUS_VOLTAGE 9.0f   //changed for IHM08
 #define R_SHUNT 0.01f               //changed for IHM08
@@ -30,15 +30,15 @@
 
 #ifdef HAS_DIFF_PHASE_RESISTORS_TO_VB
 	#define R_VEMF_BOTTOM 2200.0f
-	#define R_VEMF_TOP 10000.0f
+	#define R_VEMF_TOP 20000.0f
 #endif
 
 #define MAX_ID_REQUEST 2.0f
 #define MAX_IQ_REQUEST 15.0f       //changed for IHM08
 #define MIN_IQ_REQUEST -10.0f		   //added for F405RG
 
-//#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_TORQUE  //added for F405RG
-#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_DUTY
+#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_TORQUE  //added for F405RG
+//#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_DUTY
 
 #define ADC1OOR 4094              //added for F405RG
 
@@ -48,9 +48,11 @@
 //#define MAX_MODULATION 1.10f //Use this with 5 sector modulation if you want extra speed
 
 //Inputs
-//#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = ADC_buffer[3]  // Throttle
-#define GET_THROTTLE_INPUT 	_motor->Raw.ADC_in_ext1 = 0.9f * _motor->Raw.ADC_in_ext1 + 0.1f * hadc1.Instance->JDR3;  // Throttle for MP2 with F405 pill
-#define GET_THROTTLE_INPUT2 	0 //There is no second throttle input
+#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = ADC1_buffer[3]  // Throttle
+//#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = hadc1.Instance->JDR3
+//#define GET_THROTTLE_INPUT 	_motor->Raw.ADC_in_ext1 = 0.9f * _motor->Raw.ADC_in_ext1 + 0.1f * hadc1.Instance->JDR3;  // Throttle for MP2 with F405 pill
+//#define GET_THROTTLE_INPUT2 	0 //There is no second throttle input
+//#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[3]  // Throttle2
 #define GET_FETU_T 	_motor->Raw.MOSu_T = 	0.9f * _motor->Raw.MOSu_T + 0.1f * ADC2_buffer[3] //Temperature on PB1
 #define GET_MOTOR_T _motor->Raw.Motor_T = 0.9f * _motor->Raw.Motor_T + 0.1f * ADC1_buffer[4]
 
@@ -93,12 +95,12 @@
 #define ENCODER_E_OFFSET 14500
 #define POLE_ANGLE (65536/POLE_PAIRS)
 
-#define FASTLED GPIOB
-#define FASTLEDIO GPIO_PIN_7
-#define FASTLEDIONO 7
+//#define FASTLED GPIOB
+//#define FASTLEDIO GPIO_PIN_7
+//#define FASTLEDIONO 7
 #define SLOWLED GPIOB
-#define SLOWLEDIO GPIO_PIN_5
-#define SLOWLEDIONO 5
+#define SLOWLEDIO GPIO_PIN_2
+#define SLOWLEDIONO 2
 
 //#define SAFE_START_DEFAULT 0
 
