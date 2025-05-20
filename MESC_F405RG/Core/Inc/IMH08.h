@@ -60,6 +60,7 @@
 #define USE_FIELD_WEAKENINGV2
 //#define USE_HIGHHOPES_PHASE_BALANCING
 #define FIELD_WEAKENING_EHZ 16000 //This sets the max field weakening speed
+#define FIELD_WEAKENING_CURRENT 6.0f
 #define FIELD_WEAKENING_THRESHOLD 0.8f
 
 //#define USE_LR_OBSERVER
@@ -119,6 +120,7 @@
 #define IC_TIMER_RCPWM
 //#define IC_TIMER_ENCODER
 
+// CL: Vehicle App
 //#define KILLSWITCH_GPIO GPIOB
 //#define KILLSWITCH_PIN GPIO_PIN_3
 //#define KILLSWITCH_IONO 3

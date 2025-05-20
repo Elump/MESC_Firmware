@@ -45,12 +45,14 @@
 
 
 	/////////////////ADC///////////////
-#define  ADC1MIN 1000
-#define  ADC1MAX 3000
-#define  ADC2MIN 1200
-#define  ADC2MAX 4095
-
+#define  ADC1MIN 100
+#define  ADC1MAX 3900
+#define  ADC1OOR 4094              //shorted error
 #define ADC1_POLARITY 1.0f
+
+#define  ADC2MIN 1200
+#define  ADC2MAX 4094
+#define  ADC2OOR 4095              //shorted error
 #define ADC2_POLARITY 1.0f
 
 #ifndef DEFAULT_INPUT
@@ -61,7 +63,7 @@
 #define USE_PROFILE
 
 #ifndef FIELD_WEAKENING_CURRENT
-#define FIELD_WEAKENING_CURRENT 10.0f //This does not set whether FW is used, just the default current
+#define FIELD_WEAKENING_CURRENT 6.0f //This does not set whether FW is used, just the default current
 #endif
 
 #ifndef FIELD_WEAKENING_EHZ
@@ -105,7 +107,7 @@
 /////////////////////Prototype stuff that does not really work nicely//////////////////////////////
 
 //#define USE_DEADSHORT //This can be used in place of the phase sensors for startup from running.
-#define DEADSHORT_CURRENT 30.0f	//When recovering from tracking phase without phase sensors, the
+#define DEADSHORT_CURRENT 0.3f	* MAX_IQ_REQUEST //When recovering from tracking phase without phase sensors, the
 							//deadshort function will short the phases
 							//until the current exceeds this value. At this point, it calculates the Vd Vq and phase angle
 							//Don't set too high, after 9PWM periods, it will run the calc and start the motor regardless.
