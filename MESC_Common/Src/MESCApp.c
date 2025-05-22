@@ -131,17 +131,15 @@ void Vehicle_app(MESC_motor_typedef *_motor){
 		_motor->key_bits |= APP_KEY; //Set the bit; lock the motor from current
 		//HACK
 		vehicle_state = VEHICLE_DRIVE; //Move direct to drive for testing, otherwise it will lock the vehicle...
-//Add state machine logics
+		//Add state machine logics
 		break;
 	case VEHICLE_PARKED:
 		_motor->key_bits |= APP_KEY; //Set the bit; lock the motor from current
-//Add state machine logics
-
+		//Add state machine logics
 		break;
 	case VEHICLE_DRIVE:
 		_motor->key_bits &= ~APP_KEY; //Clear the bit; allow motor current
-//Add state machine logics
-
+		//Add state machine logics
 		break;
 	case VEHICLE_x:
 		break;
