@@ -1309,17 +1309,16 @@ case SQRT_CIRCLE_LIM_VD:
   }
 
 void MESC_Slow_IRQ_handler(MESC_motor_typedef *_motor){
-//#ifdef SLOWLED
-//	  SLOWLED->BSRR = SLOWLEDIO;
-//#endif
-	  slowLoop(_motor);
-//#ifdef SLOWLED
-//		SLOWLED->BSRR = SLOWLEDIO<<16U;
-//#endif
-  }
-  extern uint32_t ADC_buffer[6];
 
 float  Square(float x){ return((x)*(x));}
+	//#ifdef SLOWLED
+	//	  SLOWLED->BSRR = SLOWLEDIO;
+	//#endif
+	slowLoop(_motor);
+	//#ifdef SLOWLED
+	//		SLOWLED->BSRR = SLOWLEDIO<<16U;
+	//#endif
+}
 
   void slowLoop(MESC_motor_typedef *_motor) {
 // In this loop, we will fetch the throttle values, and run functions that
@@ -1830,11 +1829,6 @@ void  logVars(MESC_motor_typedef *_motor){
 	}
 }
 
-
-
-
-
-
 void SlowStartup(MESC_motor_typedef *_motor){
 	switch(_motor->SLStartupSensor){
 	case STARTUP_SENSOR_HALL:
@@ -1861,7 +1855,6 @@ void SlowStartup(MESC_motor_typedef *_motor){
 	}
 
 }
-
 
 void RunMTPA(MESC_motor_typedef *_motor){
 	//Run MTPA (Field weakening seems to have to go in  the fast loop to be stable)
@@ -1936,8 +1929,8 @@ void LimitFWCurrent(MESC_motor_typedef *_motor){
 }
 
 void clampBatteryPower(MESC_motor_typedef *_motor){
-/////// Clamp the max power taken from the battery
-/////// This assumes no MTPA and no FW active. There is no (simple) closed form for FOC with D axis current.
+	/////// Clamp the max power taken from the battery
+	/////// This assumes no MTPA and no FW active. There is no (simple) closed form for FOC with D axis current.
     _motor->FOC.reqPower = 1.5f*fabsf(_motor->FOC.Vdq.q * _motor->FOC.Idq_prereq.q);
     float batt_power_max = _motor->m.IBatmax*_motor->Conv.Vbus; //Calculate the max battery power allowed at current voltage
     if(batt_power_max > _motor->m.Pmax){
@@ -1951,6 +1944,7 @@ void clampBatteryPower(MESC_motor_typedef *_motor){
     	}
     }
 }
+
 void houseKeeping(MESC_motor_typedef *_motor){
 	////// Unpuc the observer kludge
 	// The observer gets into a bit of a state if it gets close to
@@ -2022,9 +2016,8 @@ static void handleThrottleTemperature(MESC_motor_typedef *_motor, float const T,
 	}
 }
 
-float dTmax = 0.0f;
 void ThrottleTemperature(MESC_motor_typedef *_motor){
-	dTmax = 0.0f;
+	float dTmax = 0.0f;
 
 	_motor->Conv.MOSu_T  = 0.99f *_motor->Conv.MOSu_T  + 0.01f * temp_read( &_motor->Raw.MOS_temp  , _motor->Raw.MOSu_T  );
 	_motor->Conv.MOSv_T  = 0.99f *_motor->Conv.MOSv_T  + 0.01f * temp_read( &_motor->Raw.MOS_temp  , _motor->Raw.MOSv_T  );
@@ -2060,8 +2053,6 @@ void safeStart(MESC_motor_typedef *_motor){
 		_motor->key_bits &= ~SAFESTART_KEY;
 	}
 }
-
-
 
 //Speed controller
 void RunSpeedControl(MESC_motor_typedef *_motor){
@@ -2175,7 +2166,4 @@ void MESC_IC_IRQ_Handler(MESC_motor_typedef *_motor, uint32_t SR, uint32_t CCR1,
 #endif
 }
 
-
-
-
-  // clang-format on
+// clang-format on
