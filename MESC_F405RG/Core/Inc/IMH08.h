@@ -11,6 +11,7 @@
 
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
+#define SAFE_START_DEFAULT 200 //CL: number of cycles needed without torque request before releasing control
 
 #define ABS_MAX_PHASE_CURRENT 20.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
@@ -49,11 +50,11 @@
 
 //Inputs
 // Smops: PA4 & PA5 not working due to some reason, so using PA6
-#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = 0.99f * _motor->Raw.ADC_in_ext1 + 0.01f * ADC1_buffer[3]  // Throttle
+#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = 0.99f * _motor->Raw.ADC_in_ext1 + 0.01f * ADC1_buffer[1]  // Throttle
 //#define GET_THROTTLE_INPUT _motor->Raw.ADC_in_ext1 = hadc1.Instance->JDR3
 //#define GET_THROTTLE_INPUT 	_motor->Raw.ADC_in_ext1 = 0.9f * _motor->Raw.ADC_in_ext1 + 0.1f * hadc1.Instance->JDR3;  // Throttle for MP2 with F405 pill
 //#define GET_THROTTLE_INPUT2 	0 //There is no second throttle input
-//#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[3]  // Throttle2
+#define GET_THROTTLE_INPUT2 	_motor->Raw.ADC_in_ext2 = ADC1_buffer[2]  // Throttle2
 #define GET_FETU_T 	_motor->Raw.MOSu_T =  0.9f * _motor->Raw.MOSu_T  + 0.1f * ADC2_buffer[3] //Temperature on PB1
 //#define USE_MOTOR_TEMP_SENSOR
 #define GET_MOTOR_T _motor->Raw.Motor_T = 0.9f * _motor->Raw.Motor_T + 0.1f * ADC1_buffer[4]
@@ -61,9 +62,9 @@
 //#define USE_FIELD_WEAKENING
 #define USE_FIELD_WEAKENINGV2
 //#define USE_HIGHHOPES_PHASE_BALANCING
-#define FIELD_WEAKENING_EHZ 16000 //This sets the max field weakening speed
-#define FIELD_WEAKENING_CURRENT 6.0f
-#define FIELD_WEAKENING_THRESHOLD 0.8f
+#define FIELD_WEAKENING_EHZ 16000 //This sets the max field weakening speed, not implemented jet
+#define FIELD_WEAKENING_CURRENT 6.0f //absolute max current for field weakening
+#define FIELD_WEAKENING_THRESHOLD 0.8f //used by FIELD_WEAKENINGV1
 
 //#define USE_LR_OBSERVER
 
