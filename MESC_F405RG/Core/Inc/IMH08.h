@@ -11,7 +11,7 @@
 
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
-#define SAFE_START_DEFAULT 200 //number of cycles needed without torque request before releasing control
+#define SAFE_START_DEFAULT 200 //CL: number of cycles needed without torque request before releasing control
 
 #define ABS_MAX_PHASE_CURRENT 20.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
@@ -62,9 +62,9 @@
 //#define USE_FIELD_WEAKENING
 #define USE_FIELD_WEAKENINGV2
 //#define USE_HIGHHOPES_PHASE_BALANCING
-#define FIELD_WEAKENING_EHZ 16000 //This sets the max field weakening speed
-#define FIELD_WEAKENING_CURRENT 6.0f
-#define FIELD_WEAKENING_THRESHOLD 0.8f
+#define FIELD_WEAKENING_EHZ 16000 //This sets the max field weakening speed, not implemented jet
+#define FIELD_WEAKENING_CURRENT 6.0f //absolute max current for field weakening
+#define FIELD_WEAKENING_THRESHOLD 0.8f //used by FIELD_WEAKENINGV1
 
 //#define USE_LR_OBSERVER
 

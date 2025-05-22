@@ -85,146 +85,144 @@ void MESCinput_Init(MESC_motor_typedef *_motor){
 }
 
 void MESCinput_Collect(MESC_motor_typedef *_motor){
+	//Check if remote ADC timeouts
+	if(_motor->input_vars.remote_ADC_timeout > 0){
+		_motor->input_vars.remote_ADC_timeout--;
+	}else{
+		_motor->input_vars.remote_ADC1_req = 0.0f;
+		_motor->input_vars.remote_ADC2_req = 0.0f;
+	}
 
-	  //Check if remote ADC timeouts
-	  if(_motor->input_vars.remote_ADC_timeout > 0){
-		  _motor->input_vars.remote_ADC_timeout--;
-	  }else{
-		  _motor->input_vars.remote_ADC1_req = 0.0f;
-		  _motor->input_vars.remote_ADC2_req = 0.0f;
-	  }
+	//Collect the requested throttle inputs
+	//Remote ADC1 input
+	if((_motor->input_vars.input_options & 0b100000)&&(_motor->input_vars.remote_ADC_can_id > 0)){
+			//Do nothing. Already set
+	}else{
+		_motor->input_vars.remote_ADC1_req = 0.0f;//Set the input variable to zero
+	}
 
-	  //Collect the requested throttle inputs
+	//Remote ADC2 input
+	if((_motor->input_vars.input_options & 0b1000000)&&(_motor->input_vars.remote_ADC_can_id > 0)){
+		//Do nothing, already set
+	}else{
+		_motor->input_vars.remote_ADC2_req = 0.0f;//Set the input variable to zero
+	}
 
-	  //Remote ADC1 input
-	  if((_motor->input_vars.input_options & 0b100000)&&(_motor->input_vars.remote_ADC_can_id > 0)){
-		  	  //Do nothing. Already set
-	  }else{
-		  _motor->input_vars.remote_ADC1_req = 0.0f;//Set the input variable to zero
-	  }
+	//Differential ADC12 input
+	if((_motor->input_vars.input_options & 0b10000000)){
+		//TBC, Math and logic required
+		//To be filled, as signal = ext1-ext2 with error check based on ext1+ext2
+	}else{
+		_motor->input_vars.ADC12_diff_req = 0.0f; //Set the input variable to zero
+	}
 
-	  //Remote ADC2 input
-	  if((_motor->input_vars.input_options & 0b1000000)&&(_motor->input_vars.remote_ADC_can_id > 0)){
-		  //Do nothing, already set
-	  }else{
-		  _motor->input_vars.remote_ADC2_req = 0.0f;//Set the input variable to zero
-	  }
+	//UART input
+	if(0 == (_motor->input_vars.input_options & 0b1000)){
+		_motor->input_vars.UART_req = 0.0f;
+	}
 
-	  //Differential ADC12 input
-	  if((_motor->input_vars.input_options & 0b10000000)){
-		  //TBC, Math and logic required
-		  //To be filled, as signal = ext1-ext2 with error check based on ext1+ext2
-	  }else{
-		  _motor->input_vars.ADC12_diff_req = 0.0f; //Set the input variable to zero
-	  }
-
-	  //UART input
-	  if(0 == (_motor->input_vars.input_options & 0b1000)){
-		  _motor->input_vars.UART_req = 0.0f;
-	  }
-
-	  //RCPWM input
-	  if(_motor->input_vars.input_options & 0b0100){
-		  if(_motor->input_vars.pulse_recieved){
-			  if((_motor->input_vars.IC_duration > _motor->input_vars.IC_duration_MIN) && (_motor->input_vars.IC_duration < _motor->input_vars.IC_duration_MAX)){
-				  if(_motor->input_vars.IC_pulse>(_motor->input_vars.IC_pulse_MID + _motor->input_vars.IC_pulse_DEADZONE)){
-					  _motor->input_vars.RCPWM_req = (float)(_motor->input_vars.IC_pulse - (_motor->input_vars.IC_pulse_MID + _motor->input_vars.IC_pulse_DEADZONE))*_motor->input_vars.RCPWM_gain[0][1];
-					  if(fabsf(_motor->input_vars.RCPWM_req>1.1f)){
-						  handleError(_motor, ERROR_INPUT_OOR);
-					  }
-					  if(_motor->input_vars.RCPWM_req>1.0f){_motor->input_vars.RCPWM_req=1.0f;}
-					  if(_motor->input_vars.RCPWM_req<-1.0f){_motor->input_vars.RCPWM_req=-1.0f;}
-				  }
-				  else if(_motor->input_vars.IC_pulse<(_motor->input_vars.IC_pulse_MID - _motor->input_vars.IC_pulse_DEADZONE)){
-					  _motor->input_vars.RCPWM_req = ((float)_motor->input_vars.IC_pulse - (float)(_motor->input_vars.IC_pulse_MID - _motor->input_vars.IC_pulse_DEADZONE))*_motor->input_vars.RCPWM_gain[0][1];
-					  if(fabsf(_motor->input_vars.RCPWM_req>1.1f)){
-						  handleError(_motor, ERROR_INPUT_OOR);
-					  }
-					  if(_motor->input_vars.RCPWM_req>1.0f){_motor->input_vars.RCPWM_req=1.0f;}
-					  if(_motor->input_vars.RCPWM_req<-1.0f){_motor->input_vars.RCPWM_req=-1.0f;}
-				  } else{
-					  _motor->input_vars.RCPWM_req = 0.0f;
-				  }
-			  }	else {//The duration of the IC was wrong; trap it and write no current request
-				  //Todo maybe want to implement a timeout on this, allowing spurious pulses to not wiggle the current?
-				  _motor->input_vars.RCPWM_req = 0.0f;
-			  }
-		  } else {//No pulse received flag
-			  _motor->input_vars.RCPWM_req = 0.0f;
-		  }
-	  } else{
-		  _motor->input_vars.RCPWM_req = 0.0f;
-	  }
-
-	  //ADC2 input
-	  if(_motor->input_vars.input_options & 0b0010){
-			  if(_motor->Raw.ADC_in_ext2>_motor->input_vars.adc2_MIN){
-				  _motor->input_vars.ADC2_req = ((float)_motor->Raw.ADC_in_ext2-(float)_motor->input_vars.adc2_MIN)*_motor->input_vars.adc1_gain[1]*_motor->input_vars.ADC2_polarity;
-				  if(_motor->Raw.ADC_in_ext2>_motor->input_vars.adc2_OOR){
-					  //input_vars.ADC2_req = 0.0f;
-					  handleError(_motor, ERROR_INPUT_OOR);
-				  }
-			  }
-			  else{
-				  _motor->input_vars.ADC2_req = 0.0f;
-			  }
-			  if(_motor->input_vars.ADC2_req>1.0f){_motor->input_vars.ADC2_req=1.0f;}
-			  if(_motor->input_vars.ADC2_req<-1.0f){_motor->input_vars.ADC2_req=-1.0f;}
-	  }else{
-		  _motor->input_vars.ADC2_req = 0.0f;
-	  }
-
-	  //ADC1 input
-	  if(_motor->input_vars.input_options & 0b0001){
-			  if(_motor->Raw.ADC_in_ext1>_motor->input_vars.adc1_MIN){
-				  _motor->input_vars.ADC1_req = ((float)_motor->Raw.ADC_in_ext1-(float)_motor->input_vars.adc1_MIN)*_motor->input_vars.adc1_gain[1]*_motor->input_vars.ADC1_polarity;
-				  if(_motor->Raw.ADC_in_ext1>_motor->input_vars.adc1_OOR){
-					  //input_vars.ADC1_req = 0.0f;//If we set throttle to zero, it will immediately reset the error!
-					  handleError(_motor, ERROR_INPUT_OOR);
-				  }
-			  }
-			  else{
-				  _motor->input_vars.ADC1_req = 0.0f;
-			  }
-		  if(_motor->input_vars.ADC1_req>1.0f){_motor->input_vars.ADC1_req=1.0f;}
-		  if(_motor->input_vars.ADC1_req<-1.0f){_motor->input_vars.ADC1_req=-1.0f;}
-	  }else{
-		  _motor->input_vars.ADC1_req = 0.0f;
-	  }
-
-#ifdef KILLSWITCH_GPIO
-	  if(_motor->input_vars.input_options & 0b10000){//Killswitch
-		if(KILLSWITCH_GPIO->IDR & (0x01<<KILLSWITCH_IONO)){
-			_motor->input_vars.nKillswitch = 1;
-			_motor->key_bits &= ~KILLSWITCH_KEY;
-		}else{
-			_motor->input_vars.nKillswitch = 0;
-			_motor->key_bits |= KILLSWITCH_KEY;
+	//RCPWM input
+	if(_motor->input_vars.input_options & 0b0100){
+		if(_motor->input_vars.pulse_recieved){
+			if((_motor->input_vars.IC_duration > _motor->input_vars.IC_duration_MIN) && (_motor->input_vars.IC_duration < _motor->input_vars.IC_duration_MAX)){
+				if(_motor->input_vars.IC_pulse>(_motor->input_vars.IC_pulse_MID + _motor->input_vars.IC_pulse_DEADZONE)){
+					_motor->input_vars.RCPWM_req = (float)(_motor->input_vars.IC_pulse - (_motor->input_vars.IC_pulse_MID + _motor->input_vars.IC_pulse_DEADZONE))*_motor->input_vars.RCPWM_gain[0][1];
+					if(fabsf(_motor->input_vars.RCPWM_req>1.1f)){
+						handleError(_motor, ERROR_INPUT_OOR);
+					}
+					if(_motor->input_vars.RCPWM_req>1.0f){_motor->input_vars.RCPWM_req=1.0f;}
+					if(_motor->input_vars.RCPWM_req<-1.0f){_motor->input_vars.RCPWM_req=-1.0f;}
+				}
+				else if(_motor->input_vars.IC_pulse<(_motor->input_vars.IC_pulse_MID - _motor->input_vars.IC_pulse_DEADZONE)){
+					_motor->input_vars.RCPWM_req = ((float)_motor->input_vars.IC_pulse - (float)(_motor->input_vars.IC_pulse_MID - _motor->input_vars.IC_pulse_DEADZONE))*_motor->input_vars.RCPWM_gain[0][1];
+					if(fabsf(_motor->input_vars.RCPWM_req>1.1f)){
+						handleError(_motor, ERROR_INPUT_OOR);
+					}
+					if(_motor->input_vars.RCPWM_req>1.0f){_motor->input_vars.RCPWM_req=1.0f;}
+					if(_motor->input_vars.RCPWM_req<-1.0f){_motor->input_vars.RCPWM_req=-1.0f;}
+				} else{
+					_motor->input_vars.RCPWM_req = 0.0f;
+				}
+			}	else {//The duration of the IC was wrong; trap it and write no current request
+				//Todo maybe want to implement a timeout on this, allowing spurious pulses to not wiggle the current?
+				_motor->input_vars.RCPWM_req = 0.0f;
+			}
+		} else {//No pulse received flag
+			_motor->input_vars.RCPWM_req = 0.0f;
 		}
-		if(_motor->input_vars.invert_killswitch){
-			_motor->input_vars.nKillswitch = !_motor->input_vars.nKillswitch;
-			_motor->key_bits ^= KILLSWITCH_KEY;
-		}
-	  }else{//If we are not using the killswitch, then it should be "on"
-		  _motor->input_vars.nKillswitch = 1;
-			_motor->key_bits &= ~KILLSWITCH_KEY;
-	  }
-#else
-	  _motor->input_vars.nKillswitch = 1;
-	  _motor->key_bits &= ~KILLSWITCH_KEY;
-#endif
+	} else{
+		_motor->input_vars.RCPWM_req = 0.0f;
+	}
+
+	//ADC2 input
+	if(_motor->input_vars.input_options & 0b0010){
+			if(_motor->Raw.ADC_in_ext2>_motor->input_vars.adc2_MIN){
+				_motor->input_vars.ADC2_req = ((float)_motor->Raw.ADC_in_ext2-(float)_motor->input_vars.adc2_MIN)*_motor->input_vars.adc1_gain[1]*_motor->input_vars.ADC2_polarity;
+				if(_motor->Raw.ADC_in_ext2>_motor->input_vars.adc2_OOR){
+					//input_vars.ADC2_req = 0.0f;
+					handleError(_motor, ERROR_INPUT_OOR);
+				}
+			}
+			else{
+				_motor->input_vars.ADC2_req = 0.0f;
+			}
+			if(_motor->input_vars.ADC2_req>1.0f){_motor->input_vars.ADC2_req=1.0f;}
+			if(_motor->input_vars.ADC2_req<-1.0f){_motor->input_vars.ADC2_req=-1.0f;}
+	}else{
+		_motor->input_vars.ADC2_req = 0.0f;
+	}
+
+	//ADC1 input
+	if(_motor->input_vars.input_options & 0b0001){
+			if(_motor->Raw.ADC_in_ext1>_motor->input_vars.adc1_MIN){
+				_motor->input_vars.ADC1_req = ((float)_motor->Raw.ADC_in_ext1-(float)_motor->input_vars.adc1_MIN)*_motor->input_vars.adc1_gain[1]*_motor->input_vars.ADC1_polarity;
+				if(_motor->Raw.ADC_in_ext1>_motor->input_vars.adc1_OOR){
+					//input_vars.ADC1_req = 0.0f;//If we set throttle to zero, it will immediately reset the error!
+					handleError(_motor, ERROR_INPUT_OOR);
+				}
+			}
+			else{
+				_motor->input_vars.ADC1_req = 0.0f;
+			}
+		if(_motor->input_vars.ADC1_req>1.0f){_motor->input_vars.ADC1_req=1.0f;}
+		if(_motor->input_vars.ADC1_req<-1.0f){_motor->input_vars.ADC1_req=-1.0f;}
+	}else{
+		_motor->input_vars.ADC1_req = 0.0f;
+	}
+
+	#ifdef KILLSWITCH_GPIO
+	if(_motor->input_vars.input_options & 0b10000){//Killswitch
+	if(KILLSWITCH_GPIO->IDR & (0x01<<KILLSWITCH_IONO)){
+		_motor->input_vars.nKillswitch = 1;
+		_motor->key_bits &= ~KILLSWITCH_KEY;
+	}else{
+		_motor->input_vars.nKillswitch = 0;
+		_motor->key_bits |= KILLSWITCH_KEY;
+	}
+	if(_motor->input_vars.invert_killswitch){
+		_motor->input_vars.nKillswitch = !_motor->input_vars.nKillswitch;
+		_motor->key_bits ^= KILLSWITCH_KEY;
+	}
+	}else{//If we are not using the killswitch, then it should be "on"
+		_motor->input_vars.nKillswitch = 1;
+		_motor->key_bits &= ~KILLSWITCH_KEY;
+	}
+	#else
+	_motor->input_vars.nKillswitch = 1;
+	_motor->key_bits &= ~KILLSWITCH_KEY;
+	#endif
 }
 
 int handbrakenow;
 int MESCinput_isHandbrake(){
-#ifdef HANDBRAKE_GPIO
+	#ifdef HANDBRAKE_GPIO
 	handbrakenow = HANDBRAKE_GPIO->IDR & (0x01<<HANDBRAKE_IONO);
 	if(HANDBRAKE_GPIO->IDR & (0x01<<HANDBRAKE_IONO)){
 		return 1;
 	}else{
 		return 0;
 	}
-#else
-return 0;
-#endif
+	#else
+	return 0;
+	#endif
 }
