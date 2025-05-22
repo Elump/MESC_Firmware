@@ -74,6 +74,13 @@
 #define FIELD_WEAKENING_THRESHOLD 0.8f
 #endif
 
+#ifndef MAX_ID_REQUEST
+#define MAX_ID_REQUEST 0.0f
+#endif
+
+#ifndef MIN_ID_REQUEST
+#define MIN_ID_REQUEST MAX_IQ_REQUEST * -0.3f
+#endif
 
 
 /////////////////////Related to CIRCLE LIMITATION////////////////////////////////////////

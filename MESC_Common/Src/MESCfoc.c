@@ -92,6 +92,8 @@ static void clampBatteryPower(MESC_motor_typedef *_motor);
 static void ThrottleTemperature(MESC_motor_typedef *_motor);
 static void FWRampDown(MESC_motor_typedef *_motor);
 
+inline float  Square(float x){ return((x)*(x));}
+
 void MESCfoc_Init(MESC_motor_typedef *_motor) {
 #ifdef STM32L4 // For some reason, ST have decided to have a different name for the L4 timer DBG freeze...
 	DBGMCU->APB2FZ |= DBGMCU_APB2FZ_DBG_TIM1_STOP;
@@ -302,6 +304,7 @@ void MESCfoc_Init(MESC_motor_typedef *_motor) {
 
 	//Initialise the FOC parameters
 	//Init the FW
+	_motor->FOC.FW_ehz_max = FIELD_WEAKENING_EHZ;
     _motor->FOC.FW_curr_max = FIELD_WEAKENING_CURRENT;  // test number, to be stored in user settings
 
     //Init the current controller
@@ -1309,8 +1312,6 @@ case SQRT_CIRCLE_LIM_VD:
   }
 
 void MESC_Slow_IRQ_handler(MESC_motor_typedef *_motor){
-
-float  Square(float x){ return((x)*(x));}
 	//#ifdef SLOWLED
 	//	  SLOWLED->BSRR = SLOWLEDIO;
 	//#endif

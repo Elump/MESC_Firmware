@@ -37,8 +37,10 @@
 
 void MESCinput_Init(MESC_motor_typedef *_motor){
 
-	_motor->input_vars.max_request_Idq.d = 0.0f; //Not supporting d-axis input current for now
-	_motor->input_vars.min_request_Idq.d = 0.0f;
+	_motor->input_vars.max_request_Idq.d = MAX_ID_REQUEST; //Not supporting d-axis input current for now
+	_motor->input_vars.min_request_Idq.d = MIN_ID_REQUEST;
+	// limit request current to max FW current
+	if (_motor->input_vars.min_request_Idq.d < -_motor->FOC.FW_curr_max)_motor->input_vars.min_request_Idq.d = -_motor->FOC.FW_curr_max;
 	if(!_motor->input_vars.max_request_Idq.q){
 		_motor->input_vars.max_request_Idq.q = MAX_IQ_REQUEST;
 		_motor->input_vars.min_request_Idq.q = MIN_IQ_REQUEST; //ToDo, SETTING THESE ASSYMETRIC WILL CAUSE ISSUES WITH REVERSE..

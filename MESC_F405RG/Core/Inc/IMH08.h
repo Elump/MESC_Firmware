@@ -12,7 +12,7 @@
 #define PWM_FREQUENCY 20000
 #define CUSTOM_DEADTIME 800 //ns
 
-#define ABS_MAX_PHASE_CURRENT 20.0f //changed for IHM08
+#define ABS_MAX_PHASE_CURRENT 30.0f //changed for IHM08
 #define ABS_MAX_BUS_VOLTAGE 45.0f
 #define ABS_MIN_BUS_VOLTAGE 9.0f   //changed for IHM08
 
@@ -35,9 +35,10 @@
 	#define R_VEMF_TOP 20000.0f
 #endif
 
-#define MAX_ID_REQUEST 2.0f
-#define MAX_IQ_REQUEST 15.0f       //changed for IHM08
-#define MIN_IQ_REQUEST -10.0f		   //added for F405RG
+#define MAX_ID_REQUEST 0.0f		//should be always 0.0f since d-axis current is negative
+#define MIN_ID_REQUEST -6.0f
+#define MAX_IQ_REQUEST 15.0f    //drive current
+#define MIN_IQ_REQUEST -10.0f	//regenerative current
 
 #define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_TORQUE  //added for F405RG
 //#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_DUTY
