@@ -46,7 +46,7 @@ typedef float
                       // now, until we start running out of clock cycles?
 
 typedef struct {
-  hardware_vars_t Imax;    // Max board voltage allowable
+  hardware_vars_t Imax;    // Max board current allowable
   hardware_vars_t Vmax;    // Max board voltage allowable
   hardware_vars_t Vmin;    // Min voltage at which we turn off the PWM to avoid
                            // brownouts, nastiness.

@@ -82,15 +82,15 @@ void MESCpwm_Write(MESC_motor_typedef *_motor) {
     // Now we update the sin and cos values, since when we do the inverse
     // transforms, we would like to use the most up to date versions(or even the
     // next predicted version...)
-#ifdef INTERPOLATE_V7_ANGLE
-if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.inject==0)){
-	//Only run it when there is likely to be good speed measurement stability and
-	//actual utility in doing it. At low speed, there is minimal benefit, and
-	//unstable speed estimation could make it worse.
-	//Presently, this causes issues with openloop iteration, and effectively doubles the speed. TBC
-	_motor->FOC.FOCAngle = _motor->FOC.FOCAngle + 0.5f*_motor->FOC.PLL_int;
-}
-#endif
+	#ifdef INTERPOLATE_V7_ANGLE
+	if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.inject==0)){
+		//Only run it when there is likely to be good speed measurement stability and
+		//actual utility in doing it. At low speed, there is minimal benefit, and
+		//unstable speed estimation could make it worse.
+		//Presently, this causes issues with openloop iteration, and effectively doubles the speed. TBC
+		_motor->FOC.FOCAngle = _motor->FOC.FOCAngle + 0.5f*_motor->FOC.PLL_int;
+	}
+	#endif
 	sin_cos_fast(_motor->FOC.FOCAngle, &_motor->FOC.sincosangle.sin, &_motor->FOC.sincosangle.cos);
 
     // Inverse Park transform
@@ -98,15 +98,12 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
                       _motor->FOC.sincosangle.sin * Vq;
     _motor->FOC.Vab.b = _motor->FOC.sincosangle.sin * Vd +
                       _motor->FOC.sincosangle.cos * Vq;
-#ifdef STEPPER_MOTOR//Skip inverse Clark
-
-    _motor->mtimer->Instance->CCR1 = (uint16_t)(1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.a) + _motor->FOC.PWMmid);
-    _motor->mtimer->Instance->CCR2 = (uint16_t)(-1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.a) + _motor->FOC.PWMmid);
-    _motor->mtimer->Instance->CCR3 = (uint16_t)(1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.b) + _motor->FOC.PWMmid);
-    _motor->mtimer->Instance->CCR4 = (uint16_t)(-1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.b) + _motor->FOC.PWMmid);
-
-
-#else
+	#ifdef STEPPER_MOTOR//Skip inverse Clark
+		_motor->mtimer->Instance->CCR1 = (uint16_t)(1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.a) + _motor->FOC.PWMmid);
+		_motor->mtimer->Instance->CCR2 = (uint16_t)(-1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.a) + _motor->FOC.PWMmid);
+		_motor->mtimer->Instance->CCR3 = (uint16_t)(1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.b) + _motor->FOC.PWMmid);
+		_motor->mtimer->Instance->CCR4 = (uint16_t)(-1.0f * _motor->FOC.Vab_to_PWM * (_motor->FOC.Vab.b) + _motor->FOC.PWMmid);
+	#else
 	// Inverse Clark transform - power variant
 	_motor->FOC.inverterVoltage[0] = _motor->FOC.Vab.a;
 	_motor->FOC.inverterVoltage[1] = -0.5f*_motor->FOC.inverterVoltage[0];
@@ -122,18 +119,18 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
     _motor->HighPhase = U;
 
     if (_motor->FOC.inverterVoltage[1] > top_value) {
-      top_value = _motor->FOC.inverterVoltage[1];
-      _motor->HighPhase = V;
+		top_value = _motor->FOC.inverterVoltage[1];
+		_motor->HighPhase = V;
     }
     if (_motor->FOC.inverterVoltage[2] > top_value) {
       top_value = _motor->FOC.inverterVoltage[2];
-      _motor->HighPhase = W;
+      	_motor->HighPhase = W;
     }
     if (_motor->FOC.inverterVoltage[1] < bottom_value) {
-      bottom_value = _motor->FOC.inverterVoltage[1];
+      	bottom_value = _motor->FOC.inverterVoltage[1];
     }
     if (_motor->FOC.inverterVoltage[2] < bottom_value) {
-      bottom_value = _motor->FOC.inverterVoltage[2];
+      	bottom_value = _motor->FOC.inverterVoltage[2];
     }
     if(_motor->FOC.Voltage < _motor->FOC.V_3Q_mag_max){
         _motor->HighPhase = N; //Trigger the full clark transform
@@ -141,19 +138,19 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
 
     switch(_motor->options.pwm_type){
     case PWM_SVPWM:
-    	   mid_value = _motor->FOC.PWMmid -
-    	                0.5f * _motor->FOC.Vab_to_PWM * (top_value + bottom_value);
+		mid_value = _motor->FOC.PWMmid -
+					0.5f * _motor->FOC.Vab_to_PWM * (top_value + bottom_value);
 
-    	    ////////////////////////////////////////////////////////
-    	    // Actually write the value to the timer registers
-    	    _motor->mtimer->Instance->CCR1 =
-    	    		(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[0] + mid_value);
-    	    _motor->mtimer->Instance->CCR2 =
-    	    		(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[1] + mid_value);
-    	    _motor->mtimer->Instance->CCR3 =
-    	    		(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[2] + mid_value);
+		////////////////////////////////////////////////////////
+		// Actually write the value to the timer registers
+		_motor->mtimer->Instance->CCR1 =
+				(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[0] + mid_value);
+		_motor->mtimer->Instance->CCR2 =
+				(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[1] + mid_value);
+		_motor->mtimer->Instance->CCR3 =
+				(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[2] + mid_value);
 
-    	    //Dead time compensation
+		//Dead time compensation
     	#ifdef DEADTIME_COMP
     	    // LICENCE NOTE:
     	    	  // This function deviates slightly from the BSD 3 clause licence.
@@ -186,32 +183,32 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
     	//Fallthrough FOR NOW
     case PWM_SIN_BOTTOM:
     	//Threshold for turning on sinusoidal modulation
-    	    if(_motor->FOC.Voltage < _motor->FOC.V_3Q_mag_max){//Sinusoidal
-    	    	   mid_value = _motor->FOC.PWMmid -
-    	    	                0.5f * _motor->FOC.Vab_to_PWM * (top_value + bottom_value);
+		if(_motor->FOC.Voltage < _motor->FOC.V_3Q_mag_max){//Sinusoidal
+			mid_value = _motor->FOC.PWMmid -
+						0.5f * _motor->FOC.Vab_to_PWM * (top_value + bottom_value);
 
-    	    	    ////////////////////////////////////////////////////////
-    	    	    // Actually write the value to the timer registers
-    	    	    _motor->mtimer->Instance->CCR1 =
-    	    	    		(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[0] + mid_value);
-    	    	    _motor->mtimer->Instance->CCR2 =
-    	    	    		(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[1] + mid_value);
-    	    	    _motor->mtimer->Instance->CCR3 =
-    	    	    		(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[2] + mid_value);
+			////////////////////////////////////////////////////////
+			// Actually write the value to the timer registers
+			_motor->mtimer->Instance->CCR1 =
+					(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[0] + mid_value);
+			_motor->mtimer->Instance->CCR2 =
+					(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[1] + mid_value);
+			_motor->mtimer->Instance->CCR3 =
+					(uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[2] + mid_value);
 
 //    			_motor->FOC.inverterVoltage[0] = _motor->FOC.inverterVoltage[0]+ mid_value;//0.5*_motor->FOC.Vmag_max;
 //    			_motor->FOC.inverterVoltage[1] = _motor->FOC.inverterVoltage[1]+ mid_value;//0.5*_motor->FOC.Vmag_max;
 //    			_motor->FOC.inverterVoltage[2] = _motor->FOC.inverterVoltage[2]+ mid_value;//0.5*_motor->FOC.Vmag_max;
-    	    }else{//Bottom Clamp
-    			_motor->FOC.inverterVoltage[0] = _motor->FOC.inverterVoltage[0]-bottom_value;
-    			_motor->FOC.inverterVoltage[1] = _motor->FOC.inverterVoltage[1]-bottom_value;
-    			_motor->FOC.inverterVoltage[2] = _motor->FOC.inverterVoltage[2]-bottom_value;
+		}else{//Bottom Clamp
+			_motor->FOC.inverterVoltage[0] = _motor->FOC.inverterVoltage[0]-bottom_value;
+			_motor->FOC.inverterVoltage[1] = _motor->FOC.inverterVoltage[1]-bottom_value;
+			_motor->FOC.inverterVoltage[2] = _motor->FOC.inverterVoltage[2]-bottom_value;
 
-    			//Write the timer registers
-				_motor->mtimer->Instance->CCR1 = (uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[0]);
-				_motor->mtimer->Instance->CCR2 = (uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[1]);
-				_motor->mtimer->Instance->CCR3 = (uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[2]);
-    	    }
+			//Write the timer registers
+			_motor->mtimer->Instance->CCR1 = (uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[0]);
+			_motor->mtimer->Instance->CCR2 = (uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[1]);
+			_motor->mtimer->Instance->CCR3 = (uint16_t)(_motor->FOC.Vab_to_PWM * _motor->FOC.inverterVoltage[2]);
+		}
     	#ifdef OVERMOD_DT_COMP_THRESHOLD
     	    //Concept here is that if we are close to the VBus max, we just do not turn the FET off.
     	    //Set CCRx to ARR, record how much was added, then next cycle, remove it from the count.
@@ -237,30 +234,30 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
 //    			carryW = _motor->mtimer->Instance->ARR-_motor->mtimer->Instance->CCR3; //Save the amount we have overmodulated by
 //    			_motor->mtimer->Instance->CCR3 = _motor->mtimer->Instance->ARR;
 //    		}
-    	#endif
-    	break;
+		#endif
+		break;
     }//end of pwm type switch
 
 #endif //End of #ifdef STEPPER_MOTOR
-  }
+}
 
- // Here we set all the PWMoutputs to LOW, without triggering the timerBRK,
- // which should only be set by the hardware comparators, in the case of a
- // shoot-through or other catastrophic event This function means that the
- // timer can be left running, ADCs sampling etc which enables a recovery, or
- // single PWM period break in which the backEMF can be measured directly
- // This function needs implementing and testing before any high current or
- // voltage is applied, otherwise... DeadFETs
- void MESCpwm_generateBreak(MESC_motor_typedef *_motor) {
+// Here we set all the PWMoutputs to LOW, without triggering the timerBRK,
+// which should only be set by the hardware comparators, in the case of a
+// shoot-through or other catastrophic event This function means that the
+// timer can be left running, ADCs sampling etc which enables a recovery, or
+// single PWM period break in which the backEMF can be measured directly
+// This function needs implementing and testing before any high current or
+// voltage is applied, otherwise... DeadFETs
+void MESCpwm_generateBreak(MESC_motor_typedef *_motor) {
 #ifdef INV_ENABLE_M1
-	  INV_ENABLE_M1->BSRR = INV_ENABLE_M1_IO<<16U; //Write the inverter enable pin low
+	INV_ENABLE_M1->BSRR = INV_ENABLE_M1_IO<<16U; //Write the inverter enable pin low
 #endif
 #ifdef INV_ENABLE_M2
-	  INV_ENABLE_M2->BSRR = INV_ENABLE_M2_IO<<16U; //Write the inverter enable pin low
+	INV_ENABLE_M2->BSRR = INV_ENABLE_M2_IO<<16U; //Write the inverter enable pin low
 #endif
-   MESCpwm_phU_Break(_motor);
-   MESCpwm_phV_Break(_motor );
-   MESCpwm_phW_Break(_motor );
+	MESCpwm_phU_Break(_motor);
+	MESCpwm_phV_Break(_motor);
+	MESCpwm_phW_Break(_motor);
  }
  void MESCpwm_generateEnable(MESC_motor_typedef *_motor) {
 #ifdef INV_ENABLE_M1
@@ -269,21 +266,21 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
 #ifdef INV_ENABLE_M2
 	  INV_ENABLE_M2->BSRR = INV_ENABLE_M2_IO;//Write the inverter enable pin high
 #endif
-   MESCpwm_phU_Enable(_motor);
-   MESCpwm_phV_Enable(_motor);
-   MESCpwm_phW_Enable(_motor);
+	MESCpwm_phU_Enable(_motor);
+	MESCpwm_phV_Enable(_motor);
+	MESCpwm_phW_Enable(_motor);
  }
 
- void MESCpwm_generateBreakAll() {
+void MESCpwm_generateBreakAll() {
 #ifdef INV_ENABLE_M1
-	  INV_ENABLE_M1->BSRR = INV_ENABLE_M1_IO<<16U; //Write the inverter enable pin low
+	INV_ENABLE_M1->BSRR = INV_ENABLE_M1_IO<<16U; //Write the inverter enable pin low
 #endif
 #ifdef INV_ENABLE_M2
-	  INV_ENABLE_M2->BSRR = INV_ENABLE_M2_IO<<16U; //Write the inverter enable pin low
+	INV_ENABLE_M2->BSRR = INV_ENABLE_M2_IO<<16U; //Write the inverter enable pin low
 #endif
-   for(int i=0;i<NUM_MOTORS;i++){
-   	MESCpwm_generateBreak(&mtr[i]);
-   }
+	for(int i=0;i<NUM_MOTORS;i++){
+		MESCpwm_generateBreak(&mtr[i]);
+	}
  }
 
  uint32_t tmpccmrx;  // Temporary buffer which is used to turn on/off phase PWMs
@@ -291,62 +288,62 @@ if((fabsf(_motor->FOC.eHz)>0.005f*_motor->FOC.pwm_frequency)&&(_motor->HFI.injec
  // Turn all phase U FETs off, Tristate the HBridge output - For BLDC mode
  // mainly, but also used for measuring, software fault detection and recovery
  void MESCpwm_phU_Break(MESC_motor_typedef *_motor) {
-   tmpccmrx = _motor->mtimer->Instance->CCMR1;
-   tmpccmrx &= ~TIM_CCMR1_OC1M;
-   tmpccmrx &= ~TIM_CCMR1_CC1S;
-   tmpccmrx |= TIM_OCMODE_FORCED_INACTIVE;
-   _motor->mtimer->Instance->CCMR1 = tmpccmrx;
-   _motor->mtimer->Instance->CCER &= ~TIM_CCER_CC1E;   // disable
-   _motor->mtimer->Instance->CCER &= ~TIM_CCER_CC1NE;  // disable
+	tmpccmrx = _motor->mtimer->Instance->CCMR1;
+	tmpccmrx &= ~TIM_CCMR1_OC1M;
+	tmpccmrx &= ~TIM_CCMR1_CC1S;
+	tmpccmrx |= TIM_OCMODE_FORCED_INACTIVE;
+	_motor->mtimer->Instance->CCMR1 = tmpccmrx;
+	_motor->mtimer->Instance->CCER &= ~TIM_CCER_CC1E;   // disable
+	_motor->mtimer->Instance->CCER &= ~TIM_CCER_CC1NE;  // disable
  }
  // Basically un-break phase U, opposite of above...
  void MESCpwm_phU_Enable(MESC_motor_typedef *_motor) {
-   tmpccmrx = _motor->mtimer->Instance->CCMR1;
-   tmpccmrx &= ~TIM_CCMR1_OC1M;
-   tmpccmrx &= ~TIM_CCMR1_CC1S;
-   tmpccmrx |= TIM_OCMODE_PWM1;
-   _motor->mtimer->Instance->CCMR1 = tmpccmrx;
-   _motor->mtimer->Instance->CCER |= TIM_CCER_CC1E;   // enable
-   _motor->mtimer->Instance->CCER |= TIM_CCER_CC1NE;  // enable
+	tmpccmrx = _motor->mtimer->Instance->CCMR1;
+	tmpccmrx &= ~TIM_CCMR1_OC1M;
+	tmpccmrx &= ~TIM_CCMR1_CC1S;
+	tmpccmrx |= TIM_OCMODE_PWM1;
+	_motor->mtimer->Instance->CCMR1 = tmpccmrx;
+	_motor->mtimer->Instance->CCER |= TIM_CCER_CC1E;   // enable
+	_motor->mtimer->Instance->CCER |= TIM_CCER_CC1NE;  // enable
  }
 
  void MESCpwm_phV_Break(MESC_motor_typedef *_motor) {
-   tmpccmrx = _motor->mtimer->Instance->CCMR1;
-   tmpccmrx &= ~TIM_CCMR1_OC2M;
-   tmpccmrx &= ~TIM_CCMR1_CC2S;
-   tmpccmrx |= TIM_OCMODE_FORCED_INACTIVE << 8;
-   _motor->mtimer->Instance->CCMR1 = tmpccmrx;
-   _motor->mtimer->Instance->CCER &= ~TIM_CCER_CC2E;   // disable
-   _motor->mtimer->Instance->CCER &= ~TIM_CCER_CC2NE;  // disable
+	tmpccmrx = _motor->mtimer->Instance->CCMR1;
+	tmpccmrx &= ~TIM_CCMR1_OC2M;
+	tmpccmrx &= ~TIM_CCMR1_CC2S;
+	tmpccmrx |= TIM_OCMODE_FORCED_INACTIVE << 8;
+	_motor->mtimer->Instance->CCMR1 = tmpccmrx;
+	_motor->mtimer->Instance->CCER &= ~TIM_CCER_CC2E;   // disable
+	_motor->mtimer->Instance->CCER &= ~TIM_CCER_CC2NE;  // disable
  }
 
  void MESCpwm_phV_Enable(MESC_motor_typedef *_motor) {
-   tmpccmrx = _motor->mtimer->Instance->CCMR1;
-   tmpccmrx &= ~TIM_CCMR1_OC2M;
-   tmpccmrx &= ~TIM_CCMR1_CC2S;
-   tmpccmrx |= TIM_OCMODE_PWM1 << 8;
-   _motor->mtimer->Instance->CCMR1 = tmpccmrx;
-   _motor->mtimer->Instance->CCER |= TIM_CCER_CC2E;   // enable
-   _motor->mtimer->Instance->CCER |= TIM_CCER_CC2NE;  // enable
+	tmpccmrx = _motor->mtimer->Instance->CCMR1;
+	tmpccmrx &= ~TIM_CCMR1_OC2M;
+	tmpccmrx &= ~TIM_CCMR1_CC2S;
+	tmpccmrx |= TIM_OCMODE_PWM1 << 8;
+	_motor->mtimer->Instance->CCMR1 = tmpccmrx;
+	_motor->mtimer->Instance->CCER |= TIM_CCER_CC2E;   // enable
+	_motor->mtimer->Instance->CCER |= TIM_CCER_CC2NE;  // enable
  }
 
  void MESCpwm_phW_Break(MESC_motor_typedef *_motor) {
-   tmpccmrx = _motor->mtimer->Instance->CCMR2;
-   tmpccmrx &= ~TIM_CCMR2_OC3M;
-   tmpccmrx &= ~TIM_CCMR2_CC3S;
-   tmpccmrx |= TIM_OCMODE_FORCED_INACTIVE;
-   _motor->mtimer->Instance->CCMR2 = tmpccmrx;
-   _motor->mtimer->Instance->CCER &= ~TIM_CCER_CC3E;   // disable
-   _motor->mtimer->Instance->CCER &= ~TIM_CCER_CC3NE;  // disable
+	tmpccmrx = _motor->mtimer->Instance->CCMR2;
+	tmpccmrx &= ~TIM_CCMR2_OC3M;
+	tmpccmrx &= ~TIM_CCMR2_CC3S;
+	tmpccmrx |= TIM_OCMODE_FORCED_INACTIVE;
+	_motor->mtimer->Instance->CCMR2 = tmpccmrx;
+	_motor->mtimer->Instance->CCER &= ~TIM_CCER_CC3E;   // disable
+	_motor->mtimer->Instance->CCER &= ~TIM_CCER_CC3NE;  // disable
  }
 
  void MESCpwm_phW_Enable(MESC_motor_typedef *_motor) {
-   tmpccmrx = _motor->mtimer->Instance->CCMR2;
-   tmpccmrx &= ~TIM_CCMR2_OC3M;
-   tmpccmrx &= ~TIM_CCMR2_CC3S;
-   tmpccmrx |= TIM_OCMODE_PWM1;
-   _motor->mtimer->Instance->CCMR2 = tmpccmrx;
-   _motor->mtimer->Instance->CCER |= TIM_CCER_CC3E;   // enable
-   _motor->mtimer->Instance->CCER |= TIM_CCER_CC3NE;  // enable
+	tmpccmrx = _motor->mtimer->Instance->CCMR2;
+	tmpccmrx &= ~TIM_CCMR2_OC3M;
+	tmpccmrx &= ~TIM_CCMR2_CC3S;
+	tmpccmrx |= TIM_OCMODE_PWM1;
+	_motor->mtimer->Instance->CCMR2 = tmpccmrx;
+	_motor->mtimer->Instance->CCER |= TIM_CCER_CC3E;   // enable
+	_motor->mtimer->Instance->CCER |= TIM_CCER_CC3NE;  // enable
  }
 

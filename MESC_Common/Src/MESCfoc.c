@@ -421,8 +421,6 @@ static int Iuoff, Ivoff, Iwoff;
       }
 }
 
-
-
 void MESC_ADC_IRQ_handler(MESC_motor_typedef *_motor){
 	fastLoop(_motor);
 }
@@ -437,8 +435,7 @@ void fastLoop(MESC_motor_typedef *_motor) {
 	uint32_t cycles = CPU_CYCLES;
 	// Call this directly from the TIM top IRQ
 	_motor->hall.current_hall_state = getHallState(); //ToDo, this macro is not applicable to dual motors
-	// First thing we ever want to do is convert the ADC values
-	// to real, useable numbers.
+	// First thing we ever want to do is convert the ADC values to real, useable numbers.
 	ADCConversion(_motor);
 
 	switch (_motor->MotorState) {
@@ -494,15 +491,15 @@ void fastLoop(MESC_motor_typedef *_motor) {
 				MESCFOC(_motor);
 				break;
     	}//End of MotorSensorMode switch
-	break;
+    	break;
 
     case MOTOR_STATE_TRACKING:
 		#ifdef HAS_PHASE_SENSORS
 		// Track using BEMF from phase sensors
-		MESCpwm_generateBreak(_motor);
+		MESCpwm_generateBreak(_motor); //switch all PWM off
 		getRawADCVph(_motor);
 		ADCPhaseConversion(_motor);
-		MESCTrack(_motor);
+		MESCTrack(_motor); //calculates Vd&Vq
 		switch(_motor->MotorSensorMode){
 		case MOTOR_SENSOR_MODE_HALL:
 			hallAngleEstimator(_motor);
@@ -582,11 +579,11 @@ void fastLoop(MESC_motor_typedef *_motor) {
 		if(_motor->MotorSensorMode == MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER){
 			_motor->FOC.FOCAngle = _motor->FOC.enc_angle;
 		}else{
-		//Do the same for the flux observer...
-		getRawADCVph(_motor);
-		ADCPhaseConversion(_motor);
-		MESCTrack(_motor);
-		MESCfluxobs_run(_motor);
+			//Do the same for the flux observer...
+			getRawADCVph(_motor);
+			ADCPhaseConversion(_motor);
+			MESCTrack(_motor);
+			MESCfluxobs_run(_motor);
 		}
 
 		break;
@@ -766,16 +763,14 @@ void ADCConversion(MESC_motor_typedef *_motor) {
 
 	getRawADC(_motor);
 
-	// Here we take the raw ADC values, offset, cast to (float) and use the
-	// hardware gain values to create volt and amp variables
-	//Convert the currents to real amps in SI units
+	// Here we take the raw ADC values, offset, cast to (float) and use the hardware gain values to create volt and amp variables
+	// Convert the currents to real amps in SI units
 	_motor->Conv.Iu = ((float)_motor->Raw.Iu - _motor->offset.Iu) * g_hw_setup.Igain;
 	_motor->Conv.Iv = ((float)_motor->Raw.Iv - _motor->offset.Iv) * g_hw_setup.Igain;
 	_motor->Conv.Iw = ((float)_motor->Raw.Iw - _motor->offset.Iw) * g_hw_setup.Igain;
 	_motor->Conv.Vbus =	(float)_motor->Raw.Vbus * g_hw_setup.VBGain;  // Vbus
 
-	//Check for over limit conditions. We want this after the conversion so that the
-	//correct overcurrent values are logged
+	//Check for over limit conditions. We want this after the conversion so that the correct over current values are logged
 	//VICheck(_motor); //This uses the "raw" values, and requires an extra function call
 	if (_motor->Conv.Iu > g_hw_setup.Imax){
 		handleError(_motor, ERROR_OVERCURRENT_PHA);
@@ -791,33 +786,32 @@ void ADCConversion(MESC_motor_typedef *_motor) {
 	}
 	if (_motor->Conv.Vbus < g_hw_setup.Vmin){
 		//handleError(_motor, ERROR_UNDERVOLTAGE);
-		// CL: no Vbus measurement available before slowloop
+		// CL: no Vbus measurement available before slowloop execution. So, no error handling during initialisation
 		if(_motor->MotorState != MOTOR_STATE_INITIALISING) handleError(_motor, ERROR_UNDERVOLTAGE);
 	}
 
-//Deal with terrible hardware choice of only having two current sensors
-//Based on Iu+Iv+Iw = 0
-#ifdef MISSING_UCURRSENSOR
-    _motor->Conv.Iu =
-    		-_motor->Conv.Iv -_motor->Conv.Iw;
-#endif
-#ifdef MISSING_VCURRSENSOR
-    _motor->Conv.Iv =
-    		-_motor->Conv.Iu -_motor->Conv.Iw;
-#endif
-#ifdef MISSING_WCURRSENSOR
-    _motor->Conv.Iw =
-    		-_motor->Conv.Iu -_motor->Conv.Iv;
-#endif
+	//Deal with terrible hardware choice of only having two current sensors
+	//Based on Iu+Iv+Iw = 0
+	#ifdef MISSING_UCURRSENSOR
+		_motor->Conv.Iu =
+				-_motor->Conv.Iv -_motor->Conv.Iw;
+	#endif
+	#ifdef MISSING_VCURRSENSOR
+		_motor->Conv.Iv =
+				-_motor->Conv.Iu -_motor->Conv.Iw;
+	#endif
+	#ifdef MISSING_WCURRSENSOR
+		_motor->Conv.Iw =
+				-_motor->Conv.Iu -_motor->Conv.Iv;
+	#endif
 
-#ifdef STEPPER_MOTOR //Skip the Clarke transform
-    _motor->FOC.Iab.a = _motor->Conv.Iu;
-    _motor->FOC.Iab.b = _motor->Conv.Iv;
-#else
+	#ifdef STEPPER_MOTOR //Skip the Clarke transform
+		_motor->FOC.Iab.a = _motor->Conv.Iu;
+		_motor->FOC.Iab.b = _motor->Conv.Iv;
+	#else
 
     // Power Variant Clark transform
-    // Here we select the phases that have the lowest duty cycle to us, since
-    // they should have the best current measurements
+    // Here we select the 2 phases that have the lowest duty cycle to us, since they should have the best current measurements
     switch(_motor->HighPhase){
 		case U:
 			// Clark using phase V and W
@@ -842,31 +836,30 @@ void ADCConversion(MESC_motor_typedef *_motor) {
 				one_on_sqrt3 * _motor->Conv.Iu;
 			break;
 		case N:
-
 			if(_motor->options.use_phase_balancing){
 				_motor->FOC.Iab.g = 0.33f * (_motor->Conv.Iu + _motor->Conv.Iv + _motor->Conv.Iw);
 				_motor->Conv.Iu = _motor->Conv.Iu - _motor->FOC.Iab.g;
 				_motor->Conv.Iv = _motor->Conv.Iv - _motor->FOC.Iab.g;
 				_motor->Conv.Iw = _motor->Conv.Iw - _motor->FOC.Iab.g;
-				if(fabs(_motor->FOC.Iab.g)>fabs(_motor->FOC.maxIgamma)){
+				if(fabsf(_motor->FOC.Iab.g) > fabsf(_motor->FOC.maxIgamma)){
 					_motor->FOC.maxIgamma = _motor->FOC.Iab.g;
 				}
-				if(_motor->FOC.Vdq.q<2.0f){ //Reset it to reject accumulated random noise and enable multiple goes
+				if(_motor->FOC.Vdq.q < 2.0f){ //Reset it to reject accumulated random noise and enable multiple goes
 					_motor->FOC.maxIgamma = 0.0f;
 				}
 			}
 
-      // Do the full transform
-	      _motor->FOC.Iab.a =
+			// Do the full transform
+			_motor->FOC.Iab.a =
 	          0.66666f * _motor->Conv.Iu -
 	          0.33333f * _motor->Conv.Iv -
 	          0.33333f * _motor->Conv.Iw;
-	      _motor->FOC.Iab.b =
+			_motor->FOC.Iab.b =
 	          one_on_sqrt3 * _motor->Conv.Iv -
 	          one_on_sqrt3 * _motor->Conv.Iw;
-	      break;
-    }//End of phase selection switch
-#endif
+			break;
+    	}//End of phase selection switch
+	#endif
     // Park
     _motor->FOC.Idq.d = _motor->FOC.sincosangle.cos * _motor->FOC.Iab.a +
                      _motor->FOC.sincosangle.sin * _motor->FOC.Iab.b;
@@ -1210,7 +1203,7 @@ void calculateFlux(MESC_motor_typedef *_motor) {
 
 void calculateGains(MESC_motor_typedef *_motor) {
 	_motor->FOC.pwm_period = 1.0f/_motor->FOC.pwm_frequency;
-	_motor->mtimer->Instance->ARR = HAL_RCC_GetHCLKFreq()/(((float)_motor->mtimer->Instance->PSC + 1.0f) * 2*_motor->FOC.pwm_frequency);
+	_motor->mtimer->Instance->ARR = HAL_RCC_GetHCLKFreq() / (((float)_motor->mtimer->Instance->PSC + 1.0f) * 2 * _motor->FOC.pwm_frequency);
 	_motor->mtimer->Instance->CCR4 = _motor->mtimer->Instance->ARR-5; //Just short of dead center (dead center will not actually trigger the conversion)
 	#ifdef SINGLE_ADC
 	_motor->mtimer->Instance->CCR4 = _motor->mtimer->Instance->ARR-80; //If we only have one ADC, we need to convert early otherwise the data will not be ready in time
@@ -1277,10 +1270,10 @@ void calculateVoltageGain(MESC_motor_typedef *_motor) {
 		//This is the expected current magnitude we would see based on the average inductance and the injected voltage. Not particularly reliable currently.
 		//_motor->FOC.HFI_Threshold = ((HFI_VOLTAGE*sqrt2*2.0f)*_motor->FOC.pwm_period)/((_motor->m.L_D+_motor->m.L_Q)*0.5f);
 		if(HFI_THRESHOLD==0.0f){
-		_motor->HFI.toggle_voltage = mtr->Conv.Vbus*0.05f;
-			if(_motor->HFI.toggle_voltage<1.5f){_motor->HFI.toggle_voltage = 1.5f;} //Must be greater than HFI hysteresis
+			_motor->HFI.toggle_voltage = mtr->Conv.Vbus*0.05f;
+			if(_motor->HFI.toggle_voltage < 1.5f){_motor->HFI.toggle_voltage = 1.5f;} //Must be greater than HFI hysteresis of 1V
 		}else{
-		_motor->HFI.toggle_voltage = HFI_THRESHOLD;
+			_motor->HFI.toggle_voltage = HFI_THRESHOLD;
 		}
 		break;
 	}
@@ -1371,8 +1364,8 @@ void slowLoop(MESC_motor_typedef *_motor) {
 		_motor->FOC.Id_igain = 0.0f;
 		_motor->FOC.Iq_igain = 0.0f;
 		_motor->FOC.openloop_step = (uint16_t)(600.0f*65536/_motor->FOC.pwm_frequency);//300Hz tone
-		_motor->FOC.Idq_int_err.d = 10.0f;//1V
-		_motor->FOC.Idq_int_err.q = 0.0f;//1V
+		_motor->FOC.Idq_int_err.d = 10.0f;//10V
+		_motor->FOC.Idq_int_err.q = 0.0f;//0V
 		_motor->FOC.Current_bandwidth = 0.0f;
 		_motor->FOC.PLL_int = 0.0f;
 		_motor->FOC.PLL_ki = 0.0f;
@@ -1574,28 +1567,25 @@ void MESCTrack(MESC_motor_typedef *_motor) {
 	_motor->offset.Iv = 0.9999f*_motor->offset.Iv +0.0001f*(float)_motor->Raw.Iv;
 	_motor->offset.Iw = 0.9999f*_motor->offset.Iw +0.0001f*(float)_motor->Raw.Iw;
 
-
 	// Clark transform
 	_motor->FOC.Vab.a =
-		0.666f * (_motor->Conv.Vu -
+		0.66666f * (_motor->Conv.Vu -
 				  0.5f * ((_motor->Conv.Vv) +
 						  (_motor->Conv.Vw)));
 	_motor->FOC.Vab.b =
-		0.666f *
+		0.66666f *
 		(sqrt3_on_2 * ((_motor->Conv.Vv) -
 					   (_motor->Conv.Vw)));
 
 	sin_cos_fast(_motor->FOC.FOCAngle, &_motor->FOC.sincosangle.sin, &_motor->FOC.sincosangle.cos);
 
 	// Park transform
-
 	_motor->FOC.Vdq.d = _motor->FOC.sincosangle.cos * _motor->FOC.Vab.a +
 					  _motor->FOC.sincosangle.sin * _motor->FOC.Vab.b;
 	_motor->FOC.Vdq.q = _motor->FOC.sincosangle.cos * _motor->FOC.Vab.b -
 					  _motor->FOC.sincosangle.sin * _motor->FOC.Vab.a;
 	_motor->FOC.Idq_int_err.q = _motor->FOC.Vdq.q;
 	_motor->FOC.Idq_int_err.d = _motor->FOC.Vdq.d;
-
 }
 
 

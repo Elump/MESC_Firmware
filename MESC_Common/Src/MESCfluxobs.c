@@ -88,6 +88,7 @@ void MESCfluxobs_run(MESC_motor_typedef *_motor) {
     // for producing data comparing the output to a 16bit encoder.
 	float flux_linked_norm;
 	float flux_err;
+
 switch(_motor->options.observer_type){
 case NONE:
 	break;

@@ -126,9 +126,7 @@ const float hSin_Cos_Table[256] = SIN_COS_TABLE;
 #define U270_360        0x0100u
 
 
-void sin_cos_fast( uint16_t angle , float * sin, float * cos)
-{
-
+void sin_cos_fast( uint16_t angle , float * sin, float * cos) {
   uint32_t shindex;
   uint16_t uhindex;
 

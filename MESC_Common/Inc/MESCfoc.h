@@ -367,7 +367,7 @@ typedef struct {
   float BEMFq;
   float BEMFdq_angle;
 
-//Hall start
+  //Hall start
   uint16_t hall_initialised;
   int 			hall_start_now;
   float 		hall_IIR; //decay constant for the hall start preload
@@ -379,7 +379,7 @@ typedef struct {
   float pwm_period;
   float pwm_frequency;
 
-  float Current_bandwidth;
+  float Current_bandwidth;  //current bandwidth in rads-1
   float Id_pgain;  // Current controller gains
   float Id_igain;
   float Iq_pgain;
@@ -785,22 +785,11 @@ enum FOCChannels
     FOC_CHANNELS
 };
 
-
-
-
-
-
-
-
 enum RCPWMMode{
 	THROTTLE_ONLY,
 	THROTTLE_REVERSE,
 	THROTTLE_NO_REVERSE
 };
-
-
-
-
 
 /* Function prototypes -----------------------------------------------*/
 
@@ -837,8 +826,6 @@ void OLGenerateAngle(MESC_motor_typedef *_motor);  // For open loop FOC startup,
 
 void MESCFOC(MESC_motor_typedef *_motor);  // Field and quadrature current control (PI?)
                  // Inverse Clark and Park transforms
-
-
 
 void calculateGains(MESC_motor_typedef *_motor);
 void calculateVoltageGain(MESC_motor_typedef *_motor);
