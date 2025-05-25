@@ -1589,145 +1589,144 @@ void MESCTrack(MESC_motor_typedef *_motor) {
 }
 
 
-  float IacalcDS, IbcalcDS, VacalcDS, VbcalcDS, VdcalcDS, VqcalcDS, FLaDS, FLbDS, FLaDSErr, FLbDSErr;
-  uint16_t angleDS, angleErrorDSENC, angleErrorPhaseSENC, angleErrorPhaseDS, countdown_cycles;
+float IacalcDS, IbcalcDS, VacalcDS, VbcalcDS, VdcalcDS, VqcalcDS, FLaDS, FLbDS, FLaDSErr, FLbDSErr;
+uint16_t angleDS, angleErrorDSENC, angleErrorPhaseSENC, angleErrorPhaseDS, countdown_cycles;
 
-  void deadshort(MESC_motor_typedef *_motor){
-	  // LICENCE NOTE:
-	  // This function deviates slightly from the BSD 3 clause licence.
-	  // The work here is entirely original to the MESC FOC project, and not based
-	  // on any appnotes, or borrowed from another project. This work is free to
-	  // use, as granted in BSD 3 clause, with the exception that this note must
-	  // be included in where this code is implemented/modified to use your
-	  // variable names, structures containing variables or other minor
-	  // rearrangements in place of the original names I have chosen, and credit
-	  // to David Molony as the original author must be noted.
+void deadshort(MESC_motor_typedef *_motor){
+// LICENCE NOTE:
+// This function deviates slightly from the BSD 3 clause licence.
+// The work here is entirely original to the MESC FOC project, and not based
+// on any appnotes, or borrowed from another project. This work is free to
+// use, as granted in BSD 3 clause, with the exception that this note must
+// be included in where this code is implemented/modified to use your
+// variable names, structures containing variables or other minor
+// rearrangements in place of the original names I have chosen, and credit
+// to David Molony as the original author must be noted.
 
-	  //This "deadshort " function is an original idea (who knows, someone may have had it before) for finding the rotor angle
-	  //Concept is that when starting from spinning with no phase sensors or encoder, you need to know the angle and the voltages.
-	  //To achieve this, we simply short out the motor for a PWM period and allow the current to build up.
-	  //We can then calculate the voltage from V=Ldi/dt in the alpha beta reference frame
-	  //We can calculate the angle from the atan2 of the alpha beta voltages
-	  //With this angle, we can get Vd and Vq for preloading the PI controllers
-	  //We can also preload the flux observer with motor.motorflux*sin and motor.motorflux*cos terms
+//This "deadshort " function is an original idea (who knows, someone may have had it before) for finding the rotor angle
+//Concept is that when starting from spinning with no phase sensors or encoder, you need to know the angle and the voltages.
+//To achieve this, we simply short out the motor for a PWM period and allow the current to build up.
+//We can then calculate the voltage from V=Ldi/dt in the alpha beta reference frame
+//We can calculate the angle from the atan2 of the alpha beta voltages
+//With this angle, we can get Vd and Vq for preloading the PI controllers
+//We can also preload the flux observer with motor.motorflux*sin and motor.motorflux*cos terms
 
-	static uint16_t countdown = 10;
+static uint16_t countdown = 10;
 
-	  		if(countdown == 1||(((_motor->FOC.Iab.a*_motor->FOC.Iab.a+_motor->FOC.Iab.b*_motor->FOC.Iab.b)>DEADSHORT_CURRENT*DEADSHORT_CURRENT)&&countdown<9))
-	  				{
-	  					//Need to collect the ADC currents here
-	  					MESCpwm_generateBreak(_motor);
-	  					//Calculate the voltages in the alpha beta phase...
-	  					IacalcDS = _motor->FOC.Iab.a;
-	  					IbcalcDS = _motor->FOC.Iab.b;
-	  					VacalcDS = -_motor->m.L_D*_motor->FOC.Iab.a/((9.0f-(float)countdown)*_motor->FOC.pwm_period);
-	  					VbcalcDS = -_motor->m.L_D*_motor->FOC.Iab.b/((9.0f-(float)countdown)*_motor->FOC.pwm_period);
-	  					//Calculate the phase angle
-	  					//TEST LINE angleDS = (uint16_t)(32768.0f + 10430.0f * fast_atan2(VbcalcDS, VacalcDS)) - 32768;// +16384;
+	if(countdown == 1||(((_motor->FOC.Iab.a*_motor->FOC.Iab.a+_motor->FOC.Iab.b*_motor->FOC.Iab.b)>DEADSHORT_CURRENT*DEADSHORT_CURRENT)&&countdown<9))			{
+		//Need to collect the ADC currents here
+		MESCpwm_generateBreak(_motor);
+		//Calculate the voltages in the alpha beta phase...
+		IacalcDS = _motor->FOC.Iab.a;
+		IbcalcDS = _motor->FOC.Iab.b;
+		VacalcDS = -_motor->m.L_D*_motor->FOC.Iab.a/((9.0f-(float)countdown)*_motor->FOC.pwm_period);
+		VbcalcDS = -_motor->m.L_D*_motor->FOC.Iab.b/((9.0f-(float)countdown)*_motor->FOC.pwm_period);
+		//Calculate the phase angle
+		//TEST LINE angleDS = (uint16_t)(32768.0f + 10430.0f * fast_atan2(VbcalcDS, VacalcDS)) - 32768;// +16384;
 
-	  					 angleDS = (uint16_t)(32768.0f + 10430.0f * fast_atan2(VbcalcDS, VacalcDS)) - 32768 -16384;
-	  					//Shifting by 1/4 erev does not work for going backwards. Need to rethink.
-	  					//Problem is, depending on motor direction, the sign of the voltage generated swaps for the same rotor position.
-	  					//The atan2(flux linkages) is stable under this regime, but the same for voltage is not.
-	  					_motor->FOC.FOCAngle = angleDS;//
-	  					sin_cos_fast(_motor->FOC.FOCAngle, &_motor->FOC.sincosangle.sin, &_motor->FOC.sincosangle.cos);
+			angleDS = (uint16_t)(32768.0f + 10430.0f * fast_atan2(VbcalcDS, VacalcDS)) - 32768 -16384;
+		//Shifting by 1/4 erev does not work for going backwards. Need to rethink.
+		//Problem is, depending on motor direction, the sign of the voltage generated swaps for the same rotor position.
+		//The atan2(flux linkages) is stable under this regime, but the same for voltage is not.
+		_motor->FOC.FOCAngle = angleDS;//
+		sin_cos_fast(_motor->FOC.FOCAngle, &_motor->FOC.sincosangle.sin, &_motor->FOC.sincosangle.cos);
 
-	  					//Park transform it to get VdVq
-	  					VdcalcDS = _motor->FOC.sincosangle.cos * VacalcDS +
-	  				                      _motor->FOC.sincosangle.sin * VbcalcDS;
-	  					VqcalcDS = _motor->FOC.sincosangle.cos * VbcalcDS -
-	  				                      _motor->FOC.sincosangle.sin * VacalcDS;
-	  					//Preloading the observer
-	  					FLaDS = _motor->FOC.flux_observed*_motor->FOC.sincosangle.cos;
-	  					FLbDS = _motor->FOC.flux_observed*_motor->FOC.sincosangle.sin;
-	  		//Angle Errors for debugging
-	  					angleErrorDSENC = angleDS-_motor->FOC.enc_angle;
-	  		//Do actual preloading
-	  					_motor->FOC.flux_a = FLaDS;
-	  					_motor->FOC.flux_b = FLbDS;
-	  					_motor->FOC.Ia_last = 0.0f;
-	  					_motor->FOC.Ib_last = 0.0f;
-	  					_motor->FOC.Idq_int_err.d = VdcalcDS;
-	  					_motor->FOC.Idq_int_err.q = VqcalcDS;
-	  		//Next PWM cycle it  will jump to running state,
-	  					MESCFOC(_motor);
-	  					countdown_cycles = 9-countdown;
-	  					countdown = 1;
-	  		}
-	  		if(countdown > 10){
-	  			MESCpwm_generateBreak(_motor);
-	  			_motor->mtimer->Instance->CCR1 = 50;
-	  			_motor->mtimer->Instance->CCR2 = 50;
-	  			_motor->mtimer->Instance->CCR3 = 50;
-	  			//Preload the timer at mid
-	  		}
-	  		if(countdown <= 10 && countdown>1 ){
-	  			_motor->mtimer->Instance->CCR1 = 50;
-	  			_motor->mtimer->Instance->CCR2 = 50;
-	  			_motor->mtimer->Instance->CCR3 = 50;
-	  			MESCpwm_generateEnable(_motor);
-	  		}
-	  		if(countdown == 1 ){
-					countdown = 15; //We need at least a few cycles for the current to relax
-									//to zero in case of rapid switching between states
-  					_motor->MotorState = MOTOR_STATE_RUN;
+		//Park transform it to get VdVq
+		VdcalcDS = _motor->FOC.sincosangle.cos * VacalcDS +
+							_motor->FOC.sincosangle.sin * VbcalcDS;
+		VqcalcDS = _motor->FOC.sincosangle.cos * VbcalcDS -
+							_motor->FOC.sincosangle.sin * VacalcDS;
+		//Preloading the observer
+		FLaDS = _motor->FOC.flux_observed*_motor->FOC.sincosangle.cos;
+		FLbDS = _motor->FOC.flux_observed*_motor->FOC.sincosangle.sin;
+		//Angle Errors for debugging
+		angleErrorDSENC = angleDS-_motor->FOC.enc_angle;
+		//Do actual preloading
+		_motor->FOC.flux_a = FLaDS;
+		_motor->FOC.flux_b = FLbDS;
+		_motor->FOC.Ia_last = 0.0f;
+		_motor->FOC.Ib_last = 0.0f;
+		_motor->FOC.Idq_int_err.d = VdcalcDS;
+		_motor->FOC.Idq_int_err.q = VqcalcDS;
+		//Next PWM cycle it  will jump to running state,
+		MESCFOC(_motor);
+		countdown_cycles = 9-countdown;
+		countdown = 1;
+	}
+	if(countdown > 10){
+		MESCpwm_generateBreak(_motor);
+		_motor->mtimer->Instance->CCR1 = 50;
+		_motor->mtimer->Instance->CCR2 = 50;
+		_motor->mtimer->Instance->CCR3 = 50;
+		//Preload the timer at mid
+	}
+	if(countdown <= 10 && countdown>1 ){
+		_motor->mtimer->Instance->CCR1 = 50;
+		_motor->mtimer->Instance->CCR2 = 50;
+		_motor->mtimer->Instance->CCR3 = 50;
+		MESCpwm_generateEnable(_motor);
+	}
+	if(countdown == 1 ){
+		countdown = 15; //We need at least a few cycles for the current to relax
+						//to zero in case of rapid switching between states
+		_motor->MotorState = MOTOR_STATE_RUN;
 
-	  		}
-	  		countdown--;
-  }
+	}
+	countdown--;
+}
 
-  uint8_t pkt_crc8(uint8_t crc/*CRC_SEED=0xFF*/, uint8_t *data, uint8_t length)
-  {
-      int16_t i, bit;
+uint8_t pkt_crc8(uint8_t crc/*CRC_SEED=0xFF*/, uint8_t *data, uint8_t length)
+{
+	int16_t i, bit;
 
-      for (i = 0; i < length; i++)
-      {
-          crc ^= data[i];
+	for (i = 0; i < length; i++)
+	{
+		crc ^= data[i];
 
-          for (bit = 0; bit < 8; bit++)
-          {
-              if ((crc & 0x80) != 0)
-              {
-                  crc <<= 1;
-                  crc ^= 0x1D; //CRC_POLYNOMIAL=0x1D;
-              }
-              else
-              {
-                  crc <<= 1;
-              }
-          }
-      }
+		for (bit = 0; bit < 8; bit++)
+		{
+			if ((crc & 0x80) != 0)
+			{
+				crc <<= 1;
+				crc ^= 0x1D; //CRC_POLYNOMIAL=0x1D;
+			}
+			else
+			{
+				crc <<= 1;
+			}
+		}
+	}
 
-      return crc;
-  }
+	return crc;
+}
 
-  struct __attribute__ ((__packed__))SamplePacket
-  {
-	  	struct
-	  	{
-	  		uint8_t crc;
-	  		uint8_t STAT_RESP; // Should be 0xF_?
-	  	}safetyword;
-  	uint16_t angle;
-  	int16_t speed;
-  	uint16_t revolutions;
-  };
+struct __attribute__ ((__packed__))SamplePacket
+{
+	struct
+	{
+		uint8_t crc;
+		uint8_t STAT_RESP; // Should be 0xF_?
+	}safetyword;
+uint16_t angle;
+int16_t speed;
+uint16_t revolutions;
+};
 
-  typedef struct SamplePacket SamplePacket;
-	  SamplePacket pkt;
+typedef struct SamplePacket SamplePacket;
+	SamplePacket pkt;
 
-  void tle5012(MESC_motor_typedef *_motor)
-  {
+void tle5012(MESC_motor_typedef *_motor)
+{
 #ifdef USE_SPI_ENCODER
-	  uint16_t const len = sizeof(pkt) / sizeof(uint16_t);
-	  uint16_t reg = (UINT16_C(  1) << 15) /* RW=Read */
-	               | (UINT16_C(0x0) << 11) /* Lock */
-	               | (UINT16_C(0x0) << 10) /* UPD=Buffer */
-	               | (UINT16_C(0x02) << 4) /* ADDR */
-	               | (len -1);            /* ND */
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-      HAL_SPI_Transmit( &hspi3, (uint8_t *)&reg,   1, 1000 );
-      HAL_SPI_Receive(  &hspi3, (uint8_t *)&pkt, len, 1000 );
+	uint16_t const len = sizeof(pkt) / sizeof(uint16_t);
+	uint16_t reg = (UINT16_C(  1) << 15) /* RW=Read */
+				| (UINT16_C(0x0) << 11) /* Lock */
+				| (UINT16_C(0x0) << 10) /* UPD=Buffer */
+				| (UINT16_C(0x02) << 4) /* ADDR */
+				| (len -1);            /* ND */
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+	HAL_SPI_Transmit( &hspi3, (uint8_t *)&reg,   1, 1000 );
+	HAL_SPI_Receive(  &hspi3, (uint8_t *)&pkt, len, 1000 );
 //      volatile uint8_t crc = 0;
 //#if 1
 //      reg ^= 0xFF00;
@@ -1756,16 +1755,16 @@ void MESCTrack(MESC_motor_typedef *_motor) {
 //    	  __NOP();
 //      }
 
-      pkt.angle = pkt.angle & 0x7fff;
+	pkt.angle = pkt.angle & 0x7fff;
 #ifdef ENCODER_DIR_REVERSED
-      	  _motor->FOC.enc_angle = -_motor->m.pole_pairs*((pkt.angle *2)%_motor->m.pole_angle)-_motor->FOC.enc_offset;
+	_motor->FOC.enc_angle = -_motor->m.pole_pairs*((pkt.angle *2)%_motor->m.pole_angle)-_motor->FOC.enc_offset;
 #else
-      _motor->FOC.enc_angle = _motor->m.pole_pairs*((pkt.angle *2)%_motor->m.pole_angle)-_motor->FOC.enc_offset;
+	_motor->FOC.enc_angle = _motor->m.pole_pairs*((pkt.angle *2)%_motor->m.pole_angle)-_motor->FOC.enc_offset;
 #endif
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-      pkt.revolutions = pkt.revolutions&0b0000000111111111;
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+	pkt.revolutions = pkt.revolutions&0b0000000111111111;
 #endif
-  }
+}
 
 
 
@@ -1968,6 +1967,7 @@ void houseKeeping(MESC_motor_typedef *_motor){
 //	  	  MotorError = MOTOR_ERROR_NONE;
 //	    }
 }
+
 void FWRampDown(MESC_motor_typedef *_motor){
 	//Ramp down the field weakening current
 	//Do NOT assign motorState here, since it could override error states
@@ -2073,23 +2073,23 @@ TIM_HandleTypeDef _IC_TIMER
 ){
 #ifdef IC_TIMER
 	_IC_TIMER.Instance-> SMCR = 84;
-	  _IC_TIMER.Instance-> DIER = 3;
-	  _IC_TIMER.Instance-> SR = 0;
-	  _IC_TIMER.Instance-> CCMR1 = 513;
-	  _IC_TIMER.Instance-> CCER = 49;
-	  _IC_TIMER.Instance-> ARR = 65000;
-	  _IC_TIMER.Instance-> DMAR = 1;
+	_IC_TIMER.Instance-> DIER = 3;
+	_IC_TIMER.Instance-> SR = 0;
+	_IC_TIMER.Instance-> CCMR1 = 513;
+	_IC_TIMER.Instance-> CCER = 49;
+	_IC_TIMER.Instance-> ARR = 65000;
+	_IC_TIMER.Instance-> DMAR = 1;
 #ifdef IC_TIMER_RCPWM
-	  _IC_TIMER.Instance->PSC = (HAL_RCC_GetHCLKFreq()/(1000000*SLOWTIM_SCALER))-1;
+	_IC_TIMER.Instance->PSC = (HAL_RCC_GetHCLKFreq()/(1000000*SLOWTIM_SCALER))-1;
 #else //RCtimer is used for PWM encoder
-	  _IC_TIMER.Instance->PSC = (HAL_RCC_GetHCLKFreq()/(4119000*SLOWTIM_SCALER))-1;
+	_IC_TIMER.Instance->PSC = (HAL_RCC_GetHCLKFreq()/(4119000*SLOWTIM_SCALER))-1;
 //The encoder PWM timers have a nominal frequency of 1kHz with 4119 levels
 
 #endif
-	  IC_TIM_GPIO->MODER |= MODE_AF<<(2*IC_TIM_IONO);
-	  IC_TIM_GPIO->AFR[0] |=0x2<<(IC_TIM_IONO*4);
-	  //__HAL_TIM_ENABLE_IT(_IC_TIMER,TIM_IT_UPDATE);
-	  _IC_TIMER.Instance-> CR1 = 5;
+	IC_TIM_GPIO->MODER |= MODE_AF<<(2*IC_TIM_IONO);
+	IC_TIM_GPIO->AFR[0] |=0x2<<(IC_TIM_IONO*4);
+	//__HAL_TIM_ENABLE_IT(_IC_TIMER,TIM_IT_UPDATE);
+	_IC_TIMER.Instance-> CR1 = 5;
 #endif
 }
 
