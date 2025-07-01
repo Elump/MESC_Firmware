@@ -44,9 +44,9 @@
 #define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_TORQUE  //added for F405RG
 //#define DEFAULT_CONTROL_MODE MOTOR_CONTROL_MODE_DUTY
 
-#define SEVEN_SECTOR		//Normal SVPWM implemented as midpoint clamp. If not defined, you will get 5 sector, bottom clamp
+//#define SEVEN_SECTOR		//Not used in MESC //Normal SVPWM implemented as midpoint clamp. If not defined, you will get 5 sector, bottom clamp
 #define DEADTIME_COMP		//This injects extra PWM duty onto the timer which effectively removes the dead time.
-#define DEADTIME_COMP_V 10
+#define DEADTIME_COMP_V 10  //CL: this value is added to PWM value and schould be calculated by dead time and PWM resolution 
 //#define MAX_MODULATION 1.10f //Use this with 5 sector modulation if you want extra speed
 
 //Inputs

@@ -55,13 +55,14 @@ void MESC_PWM_IRQ_handler(MESC_motor_typedef *_motor) {
 	FASTLED->BSRR = FASTLEDIO;
 #endif
 	uint32_t cycles = CPU_CYCLES;
-	if (_motor->mtimer->Instance->CR1&0x16) {//Polling the DIR (direction) bit on the motor counter DIR = 1 = downcounting
-		MESCpwm_Write(_motor);
-	}
+	//if (_motor->mtimer->Instance->CR1&0x16) {//Polling the DIR (direction) bit on the motor counter DIR = 1 = downcounting
+	//	MESCpwm_Write(_motor);
+	//}
 	if (!(_motor->mtimer->Instance->CR1&0x16)) {//Polling the DIR (direction) bit on the motor counter DIR = 0 = upcounting
-		  MESChfi_Run(_motor);
-		  MESCpwm_Write(_motor);
+		MESChfi_Run(_motor);
+	//	MESCpwm_Write(_motor);
 	}
+	MESCpwm_Write(_motor);
 	_motor->FOC.cycles_pwmloop = CPU_CYCLES - cycles;
 
 #ifdef FASTLED
@@ -169,6 +170,7 @@ void MESCpwm_Write(MESC_motor_typedef *_motor) {
     	    if(_motor->Conv.Iu < -0.030f){_motor->mtimer->Instance->CCR1 = _motor->mtimer->Instance->CCR1-_motor->FOC.deadtime_comp;}
     	    if(_motor->Conv.Iv < -0.030f){_motor->mtimer->Instance->CCR2 = _motor->mtimer->Instance->CCR2-_motor->FOC.deadtime_comp;}
     	    if(_motor->Conv.Iw < -0.030f){_motor->mtimer->Instance->CCR3 = _motor->mtimer->Instance->CCR3-_motor->FOC.deadtime_comp;}
+			// CL: shouls this be "> 0.030f" instead of "-0.030f"?
     	    if(_motor->Conv.Iu > -0.030f){_motor->mtimer->Instance->CCR1 = _motor->mtimer->Instance->CCR1+_motor->FOC.deadtime_comp;}
     	    if(_motor->Conv.Iv > -0.030f){_motor->mtimer->Instance->CCR2 = _motor->mtimer->Instance->CCR2+_motor->FOC.deadtime_comp;}
     	    if(_motor->Conv.Iw > -0.030f){_motor->mtimer->Instance->CCR3 = _motor->mtimer->Instance->CCR3+_motor->FOC.deadtime_comp;}

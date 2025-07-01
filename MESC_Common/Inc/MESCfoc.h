@@ -83,8 +83,12 @@
 #define MIN_HALL_FLUX_VOLTS 10.0f
 #endif
 
-#ifndef I_MEASURE
+#ifndef I_MEASURE  //Current setpoint for measuring resistance
+#ifdef MAX_IQ_REQUEST
+#define I_MEASURE MAX_IQ_REQUEST //Higher setpoint for resistance measurement
+#else
 #define I_MEASURE 20.0f //Higher setpoint for resistance measurement
+#endif
 #endif
 #ifndef I_MEASURE_CLOSEDLOOP
 #define I_MEASURE_CLOSEDLOOP 8.5f 	//After spinning up openloop and getting an approximation,
@@ -141,7 +145,7 @@
 #endif
 
 #ifndef ADC_OFFSET_DEFAULT
-#define ADC_OFFSET_DEFAULT 2048.0f
+#define ADC_OFFSET_DEFAULT 2048.0f  // 4096/2
 #endif
 
 #ifndef HALL_IIR

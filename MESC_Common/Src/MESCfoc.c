@@ -64,6 +64,7 @@
 
 extern TIM_HandleTypeDef htim4;
 
+//CL: shell #define or const be used here?
 float one_on_sqrt3 = 0.577350f;
 float one_on_sqrt2 = 0.707107f;
 float sqrt2 = 1.41421f;
@@ -92,7 +93,9 @@ static void clampBatteryPower(MESC_motor_typedef *_motor);
 static void ThrottleTemperature(MESC_motor_typedef *_motor);
 static void FWRampDown(MESC_motor_typedef *_motor);
 
-inline float  Square(float x){ return((x)*(x));}
+inline float  Square(float x){ return((x)*(x)); }
+inline float min(float lhs, float rhs) { return (lhs < rhs) ? lhs : rhs; }
+inline float max(float lhs, float rhs) { return (lhs > rhs) ? lhs : rhs; }
 
 void MESCfoc_Init(MESC_motor_typedef *_motor) {
 #ifdef STM32L4 // For some reason, ST have decided to have a different name for the L4 timer DBG freeze...
@@ -574,9 +577,9 @@ void fastLoop(MESC_motor_typedef *_motor) {
     case MOTOR_STATE_ERROR:
 		MESCpwm_generateBreak(_motor);  // Generate a break state (software disabling all PWM)
 							// Now panic and freak out
-		//Get the encoder angle still; we would like to continue tracking angle, there is no harm in it...
-		getIncEncAngle(_motor);
 		if(_motor->MotorSensorMode == MOTOR_SENSOR_MODE_INCREMENTAL_ENCODER){
+			//Get the encoder angle still; we would like to continue tracking angle, there is no harm in it...
+			getIncEncAngle(_motor);
 			_motor->FOC.FOCAngle = _motor->FOC.enc_angle;
 		}else{
 			//Do the same for the flux observer...
@@ -585,7 +588,7 @@ void fastLoop(MESC_motor_typedef *_motor) {
 			MESCTrack(_motor);
 			MESCfluxobs_run(_motor);
 		}
-
+		// @todo: Hall sensor could also be added here to track motor
 		break;
 
     case MOTOR_STATE_ALIGN:
@@ -772,13 +775,14 @@ void ADCConversion(MESC_motor_typedef *_motor) {
 
 	//Check for over limit conditions. We want this after the conversion so that the correct over current values are logged
 	//VICheck(_motor); //This uses the "raw" values, and requires an extra function call
-	if (_motor->Conv.Iu > g_hw_setup.Imax){
+	// CL: using fabsf to check current limit for pos & neg currents
+	if (fabsf(_motor->Conv.Iu) > g_hw_setup.Imax){
 		handleError(_motor, ERROR_OVERCURRENT_PHA);
 	}
-	if (_motor->Conv.Iv > g_hw_setup.Imax){
+	if (fabsf(_motor->Conv.Iv) > g_hw_setup.Imax){
 		handleError(_motor, ERROR_OVERCURRENT_PHB);
 	}
-	if (_motor->Conv.Iw > g_hw_setup.Imax){
+	if (fabsf(_motor->Conv.Iw) > g_hw_setup.Imax){
 		handleError(_motor,ERROR_OVERCURRENT_PHC);
 	}
 	if (_motor->Conv.Vbus > g_hw_setup.Vmax){
@@ -889,9 +893,6 @@ void ADCPhaseConversion(MESC_motor_typedef *_motor) {
 // This function is MIT licenced, copyright Oskar Weigl/Odrive Robotics
 // The origin for Odrive atan2 is public domain. Thanks to Odrive for making
 // it easy to borrow.
-float min(float lhs, float rhs) { return (lhs < rhs) ? lhs : rhs; }
-float max(float lhs, float rhs) { return (lhs > rhs) ? lhs : rhs; }
-
 float fast_atan2(float y, float x) {
 	// a := min (|x|, |y|) / max (|x|, |y|)
 	float abs_y = fabsf(y);
@@ -1221,9 +1222,6 @@ void calculateGains(MESC_motor_typedef *_motor) {
 	_motor->FOC.Iq_pgain = _motor->FOC.Id_pgain;
 	_motor->FOC.Iq_igain = _motor->FOC.Id_igain;
 
-		if(_motor->FOC.FW_curr_max > 0.9f * _motor->input_vars.max_request_Idq.q){
-			_motor->FOC.FW_curr_max = 0.9f * _motor->input_vars.max_request_Idq.q; //Limit the field weakenning to 90% of the max current to avoid math errors
-		}
 	_motor->m.L_QD = _motor->m.L_Q-_motor->m.L_D;
 	_motor->FOC.d_polarity = 1;
 }

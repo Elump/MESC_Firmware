@@ -39,6 +39,11 @@ void MESCinput_Init(MESC_motor_typedef *_motor){
 
 	_motor->input_vars.max_request_Idq.d = MAX_ID_REQUEST; //Not supporting d-axis input current for now
 	_motor->input_vars.min_request_Idq.d = MIN_ID_REQUEST;
+
+	// Limit the field weakenning to 90% of the max current to avoid math errors
+	if(_motor->FOC.FW_curr_max > 0.9f * _motor->input_vars.max_request_Idq.q){
+		_motor->FOC.FW_curr_max = 0.9f * _motor->input_vars.max_request_Idq.q;
+	}
 	// limit request current to max FW current
 	if (_motor->input_vars.min_request_Idq.d < -_motor->FOC.FW_curr_max)_motor->input_vars.min_request_Idq.d = -_motor->FOC.FW_curr_max;
 
